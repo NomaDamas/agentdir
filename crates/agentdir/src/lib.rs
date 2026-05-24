@@ -5,6 +5,7 @@ pub mod manifest;
 pub mod reflink;
 pub mod catalog;
 pub mod materializer;
+pub mod reconciler;
 pub mod watcher;
 
 pub fn version() -> &'static str {
