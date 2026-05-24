@@ -1,0 +1,23 @@
+[package]
+name = "agentdir"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+reflink-copy = { workspace = true }
+notify = { workspace = true }
+notify-debouncer-full = { workspace = true }
+walkdir = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+tempfile = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+async-trait = { workspace = true }
+tokio-util = { workspace = true }

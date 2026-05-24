@@ -1,0 +1,3 @@
+- Workspace initialized with a minimal two-crate layout: a library crate and a CLI crate sharing workspace dependencies from the root `Cargo.toml`.
+- The workspace built cleanly with the requested dependency set; the CLI binary uses `clap::Parser` only for versioned startup output and avoids adding domain logic.
+- Keeping `Cargo.lock` ignored is appropriate here because this is a library-oriented workspace.

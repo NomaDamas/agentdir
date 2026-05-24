@@ -1,0 +1,11 @@
+[package]
+name = "agentdir-cli"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "agentdir"
+path = "src/main.rs"
+
+[dependencies]
+clap = { workspace = true }

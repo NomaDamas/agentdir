@@ -1,0 +1,12 @@
+{
+  "active_plan": "/Users/jeffrey/Projects-dev/agentdir/.sisyphus/plans/agentdir.md",
+  "started_at": "2026-05-24T02:55:17.496Z",
+  "session_ids": [
+    "ses_1a840d28cffeqLMIRiApPkVqm3"
+  ],
+  "session_origins": {
+    "ses_1a840d28cffeqLMIRiApPkVqm3": "direct"
+  },
+  "plan_name": "agentdir",
+  "agent": "atlas"
+}
