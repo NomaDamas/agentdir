@@ -1071,7 +1071,7 @@ Critical Path: Task 1 → Task 2 → Task 5 → Task 9 → Task 10 → Task 11 �
   - Files: `crates/agentdir/src/workspace.rs`, `crates/agentdir/src/lib.rs`
   - Pre-commit: `cargo test -p agentdir`
 
-- [ ] 12. Bulk Operations + Batched Materialization
+- [x] 12. Bulk Operations + Batched Materialization
 
   **What to do**:
   - **RED**: Write tests for: materialize 100+ files in batch, batch handles partial failures (some files fail, rest succeed), progress reporting during batch, batch respects directory creation order (parents before children)
@@ -1143,7 +1143,7 @@ Critical Path: Task 1 → Task 2 → Task 5 → Task 9 → Task 10 → Task 11 �
   - Files: `crates/agentdir/src/materializer.rs`, `crates/agentdir/src/workspace.rs`
   - Pre-commit: `cargo test -p agentdir`
 
-- [ ] 13. CLI Binary — Core Commands
+- [x] 13. CLI Binary — Core Commands
 
   **What to do**:
   - **RED**: Write integration tests using `assert_cmd` crate for: `agentdir init <path>`, `agentdir map <source> <mount>`, `agentdir unmap <mount>`, `agentdir status`, `agentdir refresh`, `agentdir mv <from> <to>`, `agentdir cp <from> <to>`, `agentdir ln <target> <link>`, `agentdir mkdir <path>`, `agentdir rmdir <path>`
@@ -1245,7 +1245,7 @@ Critical Path: Task 1 → Task 2 → Task 5 → Task 9 → Task 10 → Task 11 �
   - Files: `crates/agentdir-cli/src/main.rs`, `crates/agentdir-cli/src/commands/*.rs`, `crates/agentdir-cli/Cargo.toml`
   - Pre-commit: `cargo test --workspace`
 
-- [ ] 14. CLI Watch Command (Long-Running)
+- [x] 14. CLI Watch Command (Long-Running)
 
   **What to do**:
   - **RED**: Write tests for: watch command starts and detects file creation, watch command handles Ctrl+C gracefully (SIGINT), watch command triggers reconciliation on events
@@ -1335,7 +1335,7 @@ Critical Path: Task 1 → Task 2 → Task 5 → Task 9 → Task 10 → Task 11 �
   - Files: `crates/agentdir-cli/src/main.rs` or `crates/agentdir-cli/src/commands/watch.rs`
   - Pre-commit: `cargo test --workspace`
 
-- [ ] 15. End-to-End Integration Tests
+- [x] 15. End-to-End Integration Tests
 
   **What to do**:
   - **RED + GREEN**: Write comprehensive integration tests in `crates/agentdir/tests/integration.rs`:

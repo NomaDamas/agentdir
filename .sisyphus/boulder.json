@@ -108,6 +108,33 @@
       "agent": "Sisyphus-Junior",
       "category": "deep",
       "updated_at": "2026-05-24T05:30:12.720Z"
+    },
+    "todo:12": {
+      "task_key": "todo:12",
+      "task_label": "12",
+      "task_title": "Bulk Operations + Batched Materialization",
+      "session_id": "ses_1a7888e6bffeo0SJMJ3XATq1ag",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-05-24T05:35:32.560Z"
+    },
+    "todo:13": {
+      "task_key": "todo:13",
+      "task_label": "13",
+      "task_title": "CLI Binary — Core Commands",
+      "session_id": "ses_1a7837b05ffeebFsEKBbAc8T5z",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-05-24T05:40:39.139Z"
+    },
+    "todo:15": {
+      "task_key": "todo:15",
+      "task_label": "15",
+      "task_title": "End-to-End Integration Tests",
+      "session_id": "ses_1a77e5843ffeHZtEphkyIkI750",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-05-24T06:12:32.957Z"
     }
   }
 }
