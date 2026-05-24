@@ -13,3 +13,16 @@
 - `manifest::save` should use pretty JSON plus `File::sync_all()` before `fs::rename()` so the final manifest path is never written directly and `.json.tmp` is cleaned up by the rename step.
 - `manifest::load` must reject schema versions other than `1` even if deserialization succeeds, so version validation stays explicit and forward-incompatible manifests fail with `ManifestParse`.
 - The manifest module can be tested in isolation with `cargo test -p agentdir manifest::tests`, which is useful for generating focused evidence without rerunning the full crate suite.
+
+## Task 9 — Watcher (notify-debouncer-full)
+- `notify-debouncer-full` 0.5 `Debouncer` implements `Watcher` directly — `.watcher()` is deprecated and returns `()`. Call `debouncer.watch()` not `debouncer.watcher().watch()`.
+- `DebouncedEvent` implements `Deref<Target=Event>` so `.kind`, `.paths`, `.need_rescan()` work through deref.
+- `new_debouncer(timeout, tick_rate, sender)` — `std::sync::mpsc::Sender<DebounceEventResult>` implements `DebounceEventHandler`.
+- `tokio::runtime::Handle::current()` captured before `std::thread::spawn` to bridge sync→async event forwarding.
+- All 3 watcher tests pass: file creation detection, cleanup on drop, periodic polling rescan.
+
+## Task 10 — Reconciler
+- Reconciler event conversion stays one-way from `SourceEvent` to `ChangeAction`: create/rename-to can synthesize placeholder file metadata, while full reconcile provides authoritative metadata from `Backend::scan`.
+- Full reconciliation intentionally diffs only `mtime_ns` and `size_bytes`; content hashes remain lazy and are invalidated on refresh instead of recomputed.
+- `Catalog::unmap` removes source roots if called on a mount, so reconciler removes only concrete virtual entry paths and leaves root mappings intact.
+- Apply actions should accumulate per-entry materializer/catalog errors in `ReconcileSummary` and continue processing rather than aborting the whole batch.

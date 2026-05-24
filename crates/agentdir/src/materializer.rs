@@ -36,6 +36,28 @@ pub struct MaterializeSummary {
     pub errors: Vec<(VirtualPath, AgentdirError)>,
 }
 
+/// Result of a batch materialization operation.
+#[derive(Debug, Default)]
+pub struct BatchResult {
+    pub succeeded: usize,
+    pub failed: usize,
+    pub errors: Vec<(VirtualPath, AgentdirError)>,
+}
+
+/// Progress reporter for batch operations.
+pub trait ProgressReporter: Send + Sync {
+    fn report(&self, completed: usize, total: usize, current: &VirtualPath);
+}
+
+/// Default progress reporter that logs via tracing.
+pub struct LogProgressReporter;
+
+impl ProgressReporter for LogProgressReporter {
+    fn report(&self, completed: usize, total: usize, current: &VirtualPath) {
+        info!("materializing [{}/{}] {}", completed, total, current);
+    }
+}
+
 /// Manages the on-disk materialized tree.
 pub struct Materializer {
     /// Root directory where virtual files are materialized.
@@ -120,6 +142,79 @@ impl Materializer {
     pub fn refresh_entry(&self, entry: &CatalogEntry) -> Result<MaterializeResult> {
         self.dematerialize_entry(&entry.virtual_path)?;
         self.materialize_entry(entry)
+    }
+
+    /// Materialize entries in batches with optional progress reporting.
+    ///
+    /// Sorts: directories first (by depth ascending), then files.
+    /// Continues on individual errors (collects into `BatchResult`).
+    pub fn materialize_batch(
+        &self,
+        entries: &[CatalogEntry],
+        progress: Option<&dyn ProgressReporter>,
+        chunk_size: usize,
+    ) -> Result<BatchResult> {
+        let mut result = BatchResult::default();
+
+        let mut sorted: Vec<&CatalogEntry> = entries.iter().collect();
+        sorted.sort_by(|a, b| {
+            let a_is_dir = matches!(a.metadata.entry_type, EntryType::Directory);
+            let b_is_dir = matches!(b.metadata.entry_type, EntryType::Directory);
+            match (a_is_dir, b_is_dir) {
+                (true, false) => Ordering::Less,
+                (false, true) => Ordering::Greater,
+                _ => virtual_depth(&a.virtual_path).cmp(&virtual_depth(&b.virtual_path)),
+            }
+        });
+
+        let total = sorted.len();
+        let effective_chunk = if chunk_size == 0 { 50 } else { chunk_size };
+
+        for (i, entry) in sorted.iter().enumerate() {
+            match self.materialize_entry(entry) {
+                Ok(_) => {
+                    result.succeeded += 1;
+                }
+                Err(e) => {
+                    result.failed += 1;
+                    result.errors.push((entry.virtual_path.clone(), e));
+                }
+            }
+
+            if (i + 1) % effective_chunk == 0 || i + 1 == total {
+                if let Some(reporter) = progress {
+                    reporter.report(i + 1, total, &entry.virtual_path);
+                }
+            }
+        }
+
+        Ok(result)
+    }
+
+    /// Dematerialize entries in batches.
+    ///
+    /// Removes deeper paths first, then shallower ones.
+    pub fn dematerialize_batch(&self, paths: &[VirtualPath]) -> Result<BatchResult> {
+        let mut result = BatchResult::default();
+
+        let mut sorted: Vec<&VirtualPath> = paths.iter().collect();
+        sorted.sort_by(|a, b| {
+            let a_depth = a.as_str().matches('/').count();
+            let b_depth = b.as_str().matches('/').count();
+            b_depth.cmp(&a_depth)
+        });
+
+        for path in sorted {
+            match self.dematerialize_entry(path) {
+                Ok(()) => result.succeeded += 1,
+                Err(e) => {
+                    result.failed += 1;
+                    result.errors.push((path.clone(), e));
+                }
+            }
+        }
+
+        Ok(result)
     }
 
     /// Materialize all entries. Creates directories first (sorted by depth), then files.
@@ -299,5 +394,120 @@ mod tests {
 
         let file_path = mat.materialized_path(&VirtualPath::new("/docs/file.txt").unwrap());
         assert!(file_path.exists());
+    }
+
+    #[test]
+    fn test_batch_materialize_100() {
+        let mat_dir = TempDir::new().unwrap();
+        let src_dir = TempDir::new().unwrap();
+        let mat = Materializer::new(mat_dir.path().to_path_buf()).unwrap();
+
+        let mut entries = Vec::new();
+        for i in 0..100 {
+            let src = src_dir.path().join(format!("file{}.txt", i));
+            std::fs::write(&src, format!("content {}", i).as_bytes()).unwrap();
+            entries.push(CatalogEntry {
+                virtual_path: VirtualPath::new(format!("/files/file{}.txt", i)).unwrap(),
+                source_path: SourcePath::new(src),
+                content_hash: None,
+                metadata: SourceMetadata {
+                    mtime_ns: 1000,
+                    size_bytes: 10,
+                    entry_type: EntryType::File,
+                },
+                materialized: false,
+            });
+        }
+
+        let result = mat.materialize_batch(&entries, None, 50).unwrap();
+        assert_eq!(result.succeeded, 100);
+        assert_eq!(result.failed, 0);
+
+        for i in 0..100 {
+            let path = mat.materialized_path(
+                &VirtualPath::new(format!("/files/file{}.txt", i)).unwrap(),
+            );
+            assert!(path.exists());
+        }
+    }
+
+    #[test]
+    fn test_batch_partial_failure() {
+        let mat_dir = TempDir::new().unwrap();
+        let src_dir = TempDir::new().unwrap();
+        let mat = Materializer::new(mat_dir.path().to_path_buf()).unwrap();
+
+        let good_src = src_dir.path().join("good.txt");
+        std::fs::write(&good_src, b"good").unwrap();
+
+        let entries = vec![
+            CatalogEntry {
+                virtual_path: VirtualPath::new("/good.txt").unwrap(),
+                source_path: SourcePath::new(good_src),
+                content_hash: None,
+                metadata: SourceMetadata {
+                    mtime_ns: 1000,
+                    size_bytes: 4,
+                    entry_type: EntryType::File,
+                },
+                materialized: false,
+            },
+            CatalogEntry {
+                virtual_path: VirtualPath::new("/bad.txt").unwrap(),
+                source_path: SourcePath::new(PathBuf::from("/nonexistent/bad.txt")),
+                content_hash: None,
+                metadata: SourceMetadata {
+                    mtime_ns: 1000,
+                    size_bytes: 0,
+                    entry_type: EntryType::File,
+                },
+                materialized: false,
+            },
+        ];
+
+        let result = mat.materialize_batch(&entries, None, 50).unwrap();
+        assert_eq!(result.succeeded, 1);
+        assert_eq!(result.failed, 1);
+        assert_eq!(result.errors.len(), 1);
+    }
+
+    #[test]
+    fn test_progress_reporter_called() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use std::sync::Arc;
+
+        struct CountingReporter(Arc<AtomicUsize>);
+        impl ProgressReporter for CountingReporter {
+            fn report(&self, _completed: usize, _total: usize, _current: &VirtualPath) {
+                self.0.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+
+        let mat_dir = TempDir::new().unwrap();
+        let src_dir = TempDir::new().unwrap();
+        let mat = Materializer::new(mat_dir.path().to_path_buf()).unwrap();
+
+        let count = Arc::new(AtomicUsize::new(0));
+        let reporter = CountingReporter(count.clone());
+
+        let mut entries = Vec::new();
+        for i in 0..5 {
+            let src = src_dir.path().join(format!("f{}.txt", i));
+            std::fs::write(&src, b"x").unwrap();
+            entries.push(CatalogEntry {
+                virtual_path: VirtualPath::new(format!("/f{}.txt", i)).unwrap(),
+                source_path: SourcePath::new(src),
+                content_hash: None,
+                metadata: SourceMetadata {
+                    mtime_ns: 1000,
+                    size_bytes: 1,
+                    entry_type: EntryType::File,
+                },
+                materialized: false,
+            });
+        }
+
+        mat.materialize_batch(&entries, Some(&reporter), 2).unwrap();
+        assert!(count.load(Ordering::SeqCst) >= 1);
     }
 }

@@ -54,6 +54,60 @@
       "agent": "Sisyphus-Junior",
       "category": "deep",
       "updated_at": "2026-05-24T04:14:41.446Z"
+    },
+    "todo:6": {
+      "task_key": "todo:6",
+      "task_label": "6",
+      "task_title": "Local Filesystem Backend",
+      "session_id": "ses_1a7cdb6cbffeeF5xxDtDFyUXmH",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-05-24T04:21:31.564Z"
+    },
+    "todo:7": {
+      "task_key": "todo:7",
+      "task_label": "7",
+      "task_title": "Materializer Engine",
+      "session_id": "ses_1a7c72b51ffe2gEzZxUI1LvzXF",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-05-24T04:39:10.952Z"
+    },
+    "todo:8": {
+      "task_key": "todo:8",
+      "task_label": "8",
+      "task_title": "Manifest Persistence (Atomic JSON I/O)",
+      "session_id": "ses_1a7b78c2effegjmNmksx36Az4m",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-05-24T04:43:03.635Z"
+    },
+    "todo:9": {
+      "task_key": "todo:9",
+      "task_label": "9",
+      "task_title": "File Watcher (notify integration)",
+      "session_id": "ses_1a7b388f4ffe68OF4XABxVdtO7",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-05-24T04:50:44.308Z"
+    },
+    "todo:10": {
+      "task_key": "todo:10",
+      "task_label": "10",
+      "task_title": "Change Reconciler (Diff + Propagate)",
+      "session_id": "ses_1a7ac79f7ffeubAmw30684fXgN",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-05-24T04:58:38.899Z"
+    },
+    "todo:11": {
+      "task_key": "todo:11",
+      "task_label": "11",
+      "task_title": "Workspace — Catalog ↔ Materializer ↔ Watcher Integration",
+      "session_id": "ses_1a7a51e66ffeYOkwCEMMBviijQ",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-05-24T05:30:12.720Z"
     }
   }
 }
