@@ -102,10 +102,105 @@ impl Backend for LocalBackend {
 
     async fn watch(
         &self,
-        _roots: &[SourcePath],
-        _tx: mpsc::Sender<SourceEvent>,
+        roots: &[SourcePath],
+        tx: mpsc::Sender<SourceEvent>,
     ) -> Result<WatchHandle> {
-        todo!("LocalBackend::watch")
+        use notify::RecursiveMode;
+        use notify_debouncer_full::new_debouncer;
+        use std::time::Duration;
+
+        let tx_clone = tx.clone();
+        let roots_owned: Vec<std::path::PathBuf> =
+            roots.iter().map(|r| r.as_path().to_path_buf()).collect();
+
+        let cancel_token = tokio_util::sync::CancellationToken::new();
+        let cancel_child = cancel_token.child_token();
+
+        let rt = tokio::runtime::Handle::current();
+
+        std::thread::spawn(move || {
+            let (debounce_tx, debounce_rx) = std::sync::mpsc::channel();
+
+            let mut debouncer = match new_debouncer(Duration::from_millis(500), None, debounce_tx) {
+                Ok(d) => d,
+                Err(e) => {
+                    let _ = rt.block_on(tx_clone.send(SourceEvent::RescanNeeded));
+                    tracing::error!("failed to create debouncer: {}", e);
+                    return;
+                }
+            };
+
+            for root in &roots_owned {
+                if let Err(e) = debouncer.watch(root, RecursiveMode::Recursive) {
+                    tracing::warn!("failed to watch {:?}: {}", root, e);
+                }
+            }
+
+            loop {
+                if cancel_child.is_cancelled() {
+                    break;
+                }
+
+                match debounce_rx.recv_timeout(Duration::from_millis(100)) {
+                    Ok(Ok(events)) => {
+                        for event in events {
+                            if event.need_rescan() {
+                                let _ = rt.block_on(tx_clone.send(SourceEvent::RescanNeeded));
+                                continue;
+                            }
+
+                            use notify::EventKind;
+                            let source_event = match event.kind {
+                                EventKind::Create(_) => {
+                                    event.paths.first().map(|p| SourceEvent::Created {
+                                        path: SourcePath::new(p.clone()),
+                                    })
+                                }
+                                EventKind::Modify(notify::event::ModifyKind::Data(_)) => {
+                                    event.paths.first().map(|p| SourceEvent::Modified {
+                                        path: SourcePath::new(p.clone()),
+                                    })
+                                }
+                                EventKind::Remove(_) => {
+                                    event.paths.first().map(|p| SourceEvent::Deleted {
+                                        path: SourcePath::new(p.clone()),
+                                    })
+                                }
+                                EventKind::Modify(notify::event::ModifyKind::Name(
+                                    notify::event::RenameMode::Both,
+                                )) => {
+                                    if event.paths.len() >= 2 {
+                                        Some(SourceEvent::Renamed {
+                                            from: SourcePath::new(event.paths[0].clone()),
+                                            to: SourcePath::new(event.paths[1].clone()),
+                                        })
+                                    } else {
+                                        None
+                                    }
+                                }
+                                _ => None,
+                            };
+
+                            if let Some(ev) = source_event {
+                                let _ = rt.block_on(tx_clone.send(ev));
+                            }
+                        }
+                    }
+                    Ok(Err(errors)) => {
+                        for e in errors {
+                            tracing::warn!("watcher error: {}", e);
+                        }
+                        let _ = rt.block_on(tx_clone.send(SourceEvent::RescanNeeded));
+                    }
+                    Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
+                    Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                        break;
+                    }
+                }
+            }
+        });
+
+        Ok(WatchHandle::new(cancel_token))
     }
 
     fn name(&self) -> &str {

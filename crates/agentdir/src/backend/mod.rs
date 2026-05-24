@@ -37,6 +37,11 @@ impl WatchHandle {
     pub fn cancel(&self) {
         self.cancel.cancel();
     }
+
+    /// Get a child token for coordinating auxiliary tasks (e.g. periodic polling).
+    pub fn cancel_token(&self) -> tokio_util::sync::CancellationToken {
+        self.cancel.child_token()
+    }
 }
 
 impl Drop for WatchHandle {
