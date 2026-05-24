@@ -1,0 +1,24 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running `target/debug/agentdir --help`
+Virtual filesystem for agent-optimized exploration
+
+Usage: agentdir [OPTIONS] <COMMAND>
+
+Commands:
+  init     Initialize a new workspace
+  map      Map a source directory into the virtual tree
+  unmap    Remove a source mapping from the virtual tree
+  status   Show workspace status
+  refresh  Detect and apply source changes
+  mv       Move an entry in the virtual namespace
+  cp       Copy an entry in the virtual namespace
+  ln       Create a virtual symlink
+  mkdir    Create a virtual directory
+  rmdir    Remove a virtual directory
+  watch    Watch for source changes and auto-sync (runs in foreground)
+  help     Print this message or the help of the given subcommand(s)
+
+Options:
+  -w, --workspace <WORKSPACE>  Workspace root directory (default: current directory)
+  -h, --help                   Print help
+  -V, --version                Print version
