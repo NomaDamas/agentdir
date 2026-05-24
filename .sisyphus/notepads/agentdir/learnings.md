@@ -8,3 +8,5 @@
 - `WatchHandle` must cancel its `CancellationToken` on drop; the cancellation test needs to keep a cloned child token for observation after the handle is moved.
 - `reflink::clone_file` should remove an existing destination before calling `reflink_copy::reflink_or_copy`; this avoids macOS `clonefile()` `EEXIST` failures and keeps overwrite semantics predictable.
 - `clone_file_verified` should compare hashes only when the caller opts in with `Some(expected_hash)`, so ordinary clones stay fast and hash verification remains explicit.
+- Materializer owns only on-disk realization of supplied `CatalogEntry` values: files go through `reflink::clone_file`, directories use `create_dir_all`, symlinks replace existing links/files before creation, and no catalog state is touched.
+- `materialize_all` should sort directories ahead of non-directories and then by virtual path depth so parent directories exist before nested entries; per-entry failures are accumulated in `MaterializeSummary` instead of aborting the batch.
