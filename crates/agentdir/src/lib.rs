@@ -1,6 +1,7 @@
 pub mod error;
 pub mod backend;
 pub mod types;
+pub mod manifest;
 pub mod reflink;
 pub mod catalog;
 pub mod materializer;

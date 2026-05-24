@@ -10,3 +10,6 @@
 - `clone_file_verified` should compare hashes only when the caller opts in with `Some(expected_hash)`, so ordinary clones stay fast and hash verification remains explicit.
 - Materializer owns only on-disk realization of supplied `CatalogEntry` values: files go through `reflink::clone_file`, directories use `create_dir_all`, symlinks replace existing links/files before creation, and no catalog state is touched.
 - `materialize_all` should sort directories ahead of non-directories and then by virtual path depth so parent directories exist before nested entries; per-entry failures are accumulated in `MaterializeSummary` instead of aborting the batch.
+- `manifest::save` should use pretty JSON plus `File::sync_all()` before `fs::rename()` so the final manifest path is never written directly and `.json.tmp` is cleaned up by the rename step.
+- `manifest::load` must reject schema versions other than `1` even if deserialization succeeds, so version validation stays explicit and forward-incompatible manifests fail with `ManifestParse`.
+- The manifest module can be tested in isolation with `cargo test -p agentdir manifest::tests`, which is useful for generating focused evidence without rerunning the full crate suite.
