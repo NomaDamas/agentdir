@@ -192,7 +192,7 @@ Critical Path: Task 1 → Task 2 → Task 5 → Task 9 → Task 10 → Task 11 �
 
 ## TODOs
 
-- [ ] 1. Cargo Workspace Scaffolding + CI Config
+- [x] 1. Cargo Workspace Scaffolding + CI Config
 
   **What to do**:
   - Create Cargo workspace with root `Cargo.toml` containing `[workspace]` with members `crates/agentdir` and `crates/agentdir-cli`
@@ -269,7 +269,7 @@ Critical Path: Task 1 → Task 2 → Task 5 → Task 9 → Task 10 → Task 11 �
   - Files: `Cargo.toml`, `crates/agentdir/Cargo.toml`, `crates/agentdir/src/lib.rs`, `crates/agentdir-cli/Cargo.toml`, `crates/agentdir-cli/src/main.rs`, `.gitignore`, `rustfmt.toml`
   - Pre-commit: `cargo test --workspace && cargo clippy --workspace -- -D warnings`
 
-- [ ] 2. Core Data Types + Manifest Schema
+- [x] 2. Core Data Types + Manifest Schema
 
   **What to do**:
   - **RED**: Write tests for `CatalogEntry` serialization/deserialization, `VirtualPath`/`SourcePath` newtype correctness, `EntryType` variants, `Manifest` schema with version field

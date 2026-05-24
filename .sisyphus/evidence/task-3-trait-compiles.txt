@@ -1,0 +1,21 @@
+   Compiling agentdir v0.1.0 (/Users/jeffrey/Projects-dev/agentdir/crates/agentdir)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+     Running unittests src/lib.rs (target/debug/deps/agentdir-5f9c6e15dd8dea22)
+
+running 7 tests
+test tests::test_version_not_empty ... ok
+test backend::tests::test_local_backend_implements_trait ... ok
+test types::tests::test_virtual_path_normalization ... ok
+test types::tests::test_content_hash_display ... ok
+test backend::tests::test_watch_handle_cancels_on_drop ... ok
+test types::tests::test_manifest_version_field ... ok
+test types::tests::test_catalog_entry_roundtrip ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agentdir
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
