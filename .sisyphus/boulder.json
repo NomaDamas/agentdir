@@ -27,6 +27,33 @@
       "agent": "Sisyphus-Junior",
       "category": "quick",
       "updated_at": "2026-05-24T03:27:08.575Z"
+    },
+    "todo:3": {
+      "task_key": "todo:3",
+      "task_label": "3",
+      "task_title": "Backend Trait Definition",
+      "session_id": "ses_1a7f97f04fferOBfBICbo5CVkX",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-05-24T03:29:54.301Z"
+    },
+    "todo:4": {
+      "task_key": "todo:4",
+      "task_label": "4",
+      "task_title": "Reflink Wrapper Module",
+      "session_id": "ses_1a7f6be57ffeP7BwnhJsEG5kgz",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-05-24T03:42:46.449Z"
+    },
+    "todo:5": {
+      "task_key": "todo:5",
+      "task_label": "5",
+      "task_title": "Catalog — Virtual Tree CRUD Operations",
+      "session_id": "ses_1a7ea4293ffeGGcKwUyGZwARk6",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-05-24T04:14:41.446Z"
     }
   }
 }

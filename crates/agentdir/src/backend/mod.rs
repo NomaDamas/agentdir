@@ -1,3 +1,7 @@
+pub mod local;
+
+pub use local::LocalBackend;
+
 use async_trait::async_trait;
 use tokio::sync::mpsc;
 
@@ -65,40 +69,6 @@ pub trait Backend: Send + Sync {
 
     /// Whether this backend supports CoW reflink cloning.
     fn supports_reflink(&self) -> bool;
-}
-
-/// Local filesystem backend placeholder.
-pub struct LocalBackend;
-
-#[async_trait]
-impl Backend for LocalBackend {
-    async fn scan(&self, _root: &SourcePath) -> Result<Vec<(SourcePath, SourceMetadata)>> {
-        todo!("LocalBackend::scan — implemented in Task 6")
-    }
-
-    async fn metadata(&self, _path: &SourcePath) -> Result<SourceMetadata> {
-        todo!("LocalBackend::metadata — implemented in Task 6")
-    }
-
-    async fn read_bytes(&self, _path: &SourcePath) -> Result<Vec<u8>> {
-        todo!("LocalBackend::read_bytes — implemented in Task 6")
-    }
-
-    async fn watch(
-        &self,
-        _roots: &[SourcePath],
-        _tx: mpsc::Sender<SourceEvent>,
-    ) -> Result<WatchHandle> {
-        todo!("LocalBackend::watch — implemented in Task 9")
-    }
-
-    fn name(&self) -> &str {
-        "local"
-    }
-
-    fn supports_reflink(&self) -> bool {
-        true
-    }
 }
 
 #[cfg(test)]

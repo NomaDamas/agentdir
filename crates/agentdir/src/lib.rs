@@ -1,6 +1,8 @@
 pub mod error;
 pub mod backend;
 pub mod types;
+pub mod reflink;
+pub mod catalog;
 
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")

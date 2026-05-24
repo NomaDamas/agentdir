@@ -340,7 +340,7 @@ Critical Path: Task 1 → Task 2 → Task 5 → Task 9 → Task 10 → Task 11 �
   - Files: `crates/agentdir/src/types.rs`, `crates/agentdir/src/error.rs`, `crates/agentdir/src/lib.rs`
   - Pre-commit: `cargo test -p agentdir`
 
-- [ ] 3. Backend Trait Definition
+- [x] 3. Backend Trait Definition
 
   **What to do**:
   - **RED**: Write tests that validate `LocalBackend` (placeholder) implements the trait, test trait object creation
@@ -399,7 +399,7 @@ Critical Path: Task 1 → Task 2 → Task 5 → Task 9 → Task 10 → Task 11 �
   - Files: `crates/agentdir/src/backend.rs`, `crates/agentdir/src/lib.rs`
   - Pre-commit: `cargo test -p agentdir`
 
-- [ ] 4. Reflink Wrapper Module
+- [x] 4. Reflink Wrapper Module
 
   **What to do**:
   - **RED**: Write tests for: reflink-or-copy succeeds on a temp file, remove-before-reflink handles existing destination, copy fallback works, error on non-existent source
@@ -478,7 +478,7 @@ Critical Path: Task 1 → Task 2 → Task 5 → Task 9 → Task 10 → Task 11 �
   - Files: `crates/agentdir/src/reflink.rs`, `crates/agentdir/src/lib.rs`
   - Pre-commit: `cargo test -p agentdir`
 
-- [ ] 5. Catalog — Virtual Tree CRUD Operations
+- [x] 5. Catalog — Virtual Tree CRUD Operations
 
   **What to do**:
   - **RED**: Write tests for each virtual tree operation: `map` (single file and directory), `unmap`, `mkdir`, `rmdir`, `mv`, `cp`, `ln` (virtual symlink), `rename`, `list`, `get`, `resolve`. Test overlap rejection (source root ⊆ materialized root or vice versa). Test case-conflict detection on case-insensitive systems.

@@ -4,3 +4,7 @@
 - `agentdir` now exposes `error` and `types` modules from `lib.rs`, with serde-serializable manifest/catalog types and a dedicated `AgentdirError` enum.
 - `VirtualPath::new()` normalizes `.` and `..`, strips trailing separators, rejects empty input, and is covered by roundtrip/path tests.
 - `cargo test -p agentdir` and `cargo clippy -p agentdir -- -D warnings` both completed successfully after adding the core schema types.
+- `Backend` uses `async-trait` plus `tokio::sync::mpsc::Sender<SourceEvent>` so future backends can stream watcher events behind a trait object.
+- `WatchHandle` must cancel its `CancellationToken` on drop; the cancellation test needs to keep a cloned child token for observation after the handle is moved.
+- `reflink::clone_file` should remove an existing destination before calling `reflink_copy::reflink_or_copy`; this avoids macOS `clonefile()` `EEXIST` failures and keeps overwrite semantics predictable.
+- `clone_file_verified` should compare hashes only when the caller opts in with `Some(expected_hash)`, so ordinary clones stay fast and hash verification remains explicit.
