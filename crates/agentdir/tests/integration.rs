@@ -143,6 +143,13 @@ async fn test_virtual_operations() {
         std::fs::read(ws_dir.path().join("archive/file_copy.txt")).unwrap(),
         b"original"
     );
+
+    ws.ln(
+        &VirtualPath::new("/archive/file.txt").unwrap(),
+        &VirtualPath::new("/archive/link.txt").unwrap(),
+    )
+    .unwrap();
+    assert!(ws.catalog.get(&VirtualPath::new("/archive/link.txt").unwrap()).is_ok());
 }
 
 /// Test 4: Persistence roundtrip

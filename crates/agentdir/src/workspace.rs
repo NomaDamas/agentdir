@@ -109,11 +109,19 @@ impl Workspace {
         let entries_added = entries.len();
         self.catalog.add_entries(entries.clone())?;
 
-        let batch = self.materializer.materialize_batch(&entries, None, 50)?;
+        let batch_result = self.materializer.materialize_batch(&entries, None, 50)?;
+
+        let failed_paths: std::collections::HashSet<_> = batch_result
+            .errors
+            .iter()
+            .map(|(vp, _)| vp.as_str().to_string())
+            .collect();
 
         for entry in &entries {
-            if let Ok(catalog_entry) = self.catalog.get_mut(&entry.virtual_path) {
-                catalog_entry.materialized = true;
+            if !failed_paths.contains(entry.virtual_path.as_str()) {
+                if let Ok(catalog_entry) = self.catalog.get_mut(&entry.virtual_path) {
+                    catalog_entry.materialized = true;
+                }
             }
         }
 
@@ -121,10 +129,10 @@ impl Workspace {
 
         Ok(MapSummary {
             entries_added,
-            reflinked: 0,
-            copied: 0,
-            dirs_created: 0,
-            errors: batch.failed,
+            reflinked: batch_result.reflinked,
+            copied: batch_result.copied,
+            dirs_created: batch_result.dirs_created,
+            errors: batch_result.failed,
         })
     }
 

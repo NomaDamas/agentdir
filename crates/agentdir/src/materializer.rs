@@ -41,6 +41,10 @@ pub struct MaterializeSummary {
 pub struct BatchResult {
     pub succeeded: usize,
     pub failed: usize,
+    pub reflinked: usize,
+    pub copied: usize,
+    pub dirs_created: usize,
+    pub symlinks_created: usize,
     pub errors: Vec<(VirtualPath, AgentdirError)>,
 }
 
@@ -172,8 +176,21 @@ impl Materializer {
 
         for (i, entry) in sorted.iter().enumerate() {
             match self.materialize_entry(entry) {
-                Ok(_) => {
+                Ok(MaterializeResult::Reflinked) => {
                     result.succeeded += 1;
+                    result.reflinked += 1;
+                }
+                Ok(MaterializeResult::Copied(_)) => {
+                    result.succeeded += 1;
+                    result.copied += 1;
+                }
+                Ok(MaterializeResult::DirCreated) => {
+                    result.succeeded += 1;
+                    result.dirs_created += 1;
+                }
+                Ok(MaterializeResult::SymlinkCreated) => {
+                    result.succeeded += 1;
+                    result.symlinks_created += 1;
                 }
                 Err(e) => {
                     result.failed += 1;

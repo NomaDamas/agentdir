@@ -135,6 +135,41 @@
       "agent": "Sisyphus-Junior",
       "category": "deep",
       "updated_at": "2026-05-24T06:12:32.957Z"
+    },
+    "final-wave:f1": {
+      "task_key": "final-wave:f1",
+      "task_label": "F1",
+      "task_title": "**Plan Compliance Audit** — `oracle`",
+      "session_id": "ses_1a7621a9fffeZXAUQKGDmdouAL",
+      "agent": "oracle",
+      "updated_at": "2026-05-24T06:15:13.103Z"
+    },
+    "final-wave:f2": {
+      "task_key": "final-wave:f2",
+      "task_label": "F2",
+      "task_title": "**Code Quality Review** — `unspecified-high`",
+      "session_id": "ses_1a7601147ffeXVm77E2qEKbEpd",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-05-24T06:17:50.585Z"
+    },
+    "final-wave:f3": {
+      "task_key": "final-wave:f3",
+      "task_label": "F3",
+      "task_title": "**Real Manual QA** — `unspecified-high`",
+      "session_id": "ses_1a75d8e75ffepnHl6cJ42aJhat",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-05-24T06:22:18.549Z"
+    },
+    "final-wave:f4": {
+      "task_key": "final-wave:f4",
+      "task_label": "F4",
+      "task_title": "**Scope Fidelity Check** — `deep`",
+      "session_id": "ses_1a73a385bffeEWiQDxwpEAgc7c",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-05-24T06:59:07.944Z"
     }
   }
 }

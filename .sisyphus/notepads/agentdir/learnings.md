@@ -26,3 +26,9 @@
 - Full reconciliation intentionally diffs only `mtime_ns` and `size_bytes`; content hashes remain lazy and are invalidated on refresh instead of recomputed.
 - `Catalog::unmap` removes source roots if called on a mount, so reconciler removes only concrete virtual entry paths and leaves root mappings intact.
 - Apply actions should accumulate per-entry materializer/catalog errors in `ReconcileSummary` and continue processing rather than aborting the whole batch.
+## Scope fidelity check - 2026-05-24
+- Reviewed Tasks 1-15 against implementation files under crates/.
+- Contamination searches for remote backends, write-back, FUSE, organization intelligence, daemon management, and content indexing returned clean.
+- Reflink direct usage appears only in crates/agentdir/src/reflink.rs as required.
+- Deliverables exist, but evidence directory has only 10 task evidence files, not one per task/scenario.
+- REJECT findings: Task 2 SourcePath does not canonicalize; Task 3/6 conflict resolved with full LocalBackend implementation but final scope acceptable; Task 5 lacks map method and rmdir signature differs; Task 9 event tests incomplete; Task 13 lacks assert_cmd integration tests/dev-dependency; Task 14 lacks CLI watch tests; Task 15 virtual operations test omits ln; integration tests use std::thread::sleep contrary watcher/test guardrail spirit.
