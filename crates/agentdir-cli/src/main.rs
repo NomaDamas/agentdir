@@ -59,13 +59,6 @@ enum Commands {
         /// Destination virtual path
         to: String,
     },
-    /// Create a virtual symlink
-    Ln {
-        /// Target virtual path
-        target: String,
-        /// Link virtual path
-        link: String,
-    },
     /// Create a virtual directory
     Mkdir {
         /// Virtual path to create
@@ -88,8 +81,7 @@ enum Commands {
 }
 
 fn resolve_workspace(workspace_arg: Option<PathBuf>) -> PathBuf {
-    workspace_arg
-        .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
+    workspace_arg.unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
 }
 
 fn print_error(e: &AgentdirError) {
@@ -123,8 +115,7 @@ async fn run(command: Commands, workspace_root: PathBuf) -> agentdir::error::Res
 
         Commands::Map { source, mount } => {
             let mut ws = Workspace::open(workspace_root)?;
-            let source_path =
-                SourcePath::new(source.canonicalize().map_err(AgentdirError::Io)?);
+            let source_path = SourcePath::new(source.canonicalize().map_err(AgentdirError::Io)?);
             let mount_path = VirtualPath::new(&mount)?;
 
             let summary = ws.map(source_path, mount_path).await?;
@@ -190,15 +181,6 @@ async fn run(command: Commands, workspace_root: PathBuf) -> agentdir::error::Res
             Ok(())
         }
 
-        Commands::Ln { target, link } => {
-            let mut ws = Workspace::open(workspace_root)?;
-            let target_path = VirtualPath::new(&target)?;
-            let link_path = VirtualPath::new(&link)?;
-            ws.ln(&target_path, &link_path)?;
-            println!("Linked {link} -> {target}");
-            Ok(())
-        }
-
         Commands::Mkdir { path } => {
             let mut ws = Workspace::open(workspace_root)?;
             let vpath = VirtualPath::new(&path)?;
@@ -215,9 +197,7 @@ async fn run(command: Commands, workspace_root: PathBuf) -> agentdir::error::Res
             Ok(())
         }
 
-        Commands::Watch { interval } => {
-            run_watch(workspace_root, interval).await
-        }
+        Commands::Watch { interval } => run_watch(workspace_root, interval).await,
     }
 }
 

@@ -1,13 +1,13 @@
-pub mod error;
 pub mod backend;
-pub mod types;
-pub mod manifest;
-pub mod reflink;
 pub mod catalog;
+pub mod error;
+pub mod manifest;
 pub mod materializer;
 pub mod reconciler;
-pub mod workspace;
+pub mod reflink;
+pub mod types;
 pub mod watcher;
+pub mod workspace;
 
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")

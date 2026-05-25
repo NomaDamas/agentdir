@@ -199,33 +199,6 @@ impl Catalog {
         Ok(())
     }
 
-    /// Create a virtual symlink.
-    pub fn ln(&mut self, target: &VirtualPath, link: &VirtualPath) -> Result<()> {
-        let link_key = link.as_str().to_string();
-        if self.entry_index.contains_key(&link_key) {
-            return Err(AgentdirError::EntryExists(link_key));
-        }
-
-        let target = PathBuf::from(target.as_str());
-        let entry = CatalogEntry {
-            virtual_path: link.clone(),
-            source_path: SourcePath::new(target.clone()),
-            content_hash: None,
-            metadata: SourceMetadata {
-                mtime_ns: 0,
-                size_bytes: 0,
-                entry_type: EntryType::Symlink { target },
-            },
-            materialized: false,
-        };
-
-        let index = self.manifest.entries.len();
-        self.entry_index.insert(link_key, index);
-        self.manifest.entries.push(entry);
-        self.manifest.touch();
-        Ok(())
-    }
-
     /// Rename an entry without changing its parent directory.
     pub fn rename(&mut self, path: &VirtualPath, new_name: &str) -> Result<()> {
         let parent = path
@@ -291,6 +264,16 @@ impl Catalog {
             .find(|entry| entry.source_path.as_path() == source.as_path())
     }
 
+    /// Find ALL entries that reference a given source path.
+    /// Returns entries for 1:N mappings (e.g., files duplicated via `cp`).
+    pub fn find_all_by_source(&self, source: &SourcePath) -> Vec<&CatalogEntry> {
+        self.manifest
+            .entries
+            .iter()
+            .filter(|entry| entry.source_path.as_path() == source.as_path())
+            .collect()
+    }
+
     /// All entries in the catalog.
     pub fn entries(&self) -> &[CatalogEntry] {
         &self.manifest.entries
@@ -349,7 +332,7 @@ mod tests {
     }
 
     fn make_catalog() -> Catalog {
-        Catalog::new(PathBuf::from("/tmp/materialized"))
+        Catalog::new(std::env::temp_dir().join("agentdir_test_materialized"))
     }
 
     #[test]
@@ -412,37 +395,18 @@ mod tests {
     }
 
     #[test]
-    fn test_ln_creates_symlink_entry() {
-        let mut catalog = make_catalog();
-        catalog
-            .ln(
-                &VirtualPath::new("/docs/readme.md").unwrap(),
-                &VirtualPath::new("/link/readme.md").unwrap(),
-            )
-            .unwrap();
-
-        let entry = catalog
-            .get(&VirtualPath::new("/link/readme.md").unwrap())
-            .unwrap();
-        assert!(matches!(entry.metadata.entry_type, EntryType::Symlink { .. }));
-    }
-
-    #[test]
     fn test_overlap_rejection() {
+        let tmp = std::env::temp_dir();
         let result = Catalog::validate_no_overlap(
-            Path::new("/tmp/materialized/subdir"),
-            Path::new("/tmp/materialized"),
+            &tmp.join("materialized/subdir"),
+            &tmp.join("materialized"),
         );
         assert!(matches!(result, Err(AgentdirError::PathOverlap(_))));
 
-        let result =
-            Catalog::validate_no_overlap(Path::new("/tmp/source"), Path::new("/tmp/source/mat"));
+        let result = Catalog::validate_no_overlap(&tmp.join("source"), &tmp.join("source/mat"));
         assert!(matches!(result, Err(AgentdirError::PathOverlap(_))));
 
-        let result = Catalog::validate_no_overlap(
-            Path::new("/tmp/source"),
-            Path::new("/tmp/materialized"),
-        );
+        let result = Catalog::validate_no_overlap(&tmp.join("source"), &tmp.join("materialized"));
         assert!(result.is_ok());
     }
 

@@ -1,5 +1,4 @@
 use std::fs;
-use std::path::PathBuf;
 use std::time::UNIX_EPOCH;
 
 use async_trait::async_trait;
@@ -35,10 +34,11 @@ impl Backend for LocalBackend {
                     .map(|d| d.as_nanos())
                     .unwrap_or(0);
 
-                let entry_type = if metadata.is_symlink() {
-                    let target = fs::read_link(&path).unwrap_or_else(|_| PathBuf::new());
-                    EntryType::Symlink { target }
-                } else if metadata.is_dir() {
+                if metadata.is_symlink() {
+                    continue;
+                }
+
+                let entry_type = if metadata.is_dir() {
                     EntryType::Directory
                 } else {
                     EntryType::File
@@ -73,8 +73,7 @@ impl Backend for LocalBackend {
                 .unwrap_or(0);
 
             let entry_type = if metadata.is_symlink() {
-                let target = fs::read_link(&path).unwrap_or_else(|_| PathBuf::new());
-                EntryType::Symlink { target }
+                EntryType::File
             } else if metadata.is_dir() {
                 EntryType::Directory
             } else {
@@ -95,9 +94,7 @@ impl Backend for LocalBackend {
         let path = path.as_path().to_path_buf();
         tokio::task::spawn_blocking(move || fs::read(&path).map_err(AgentdirError::Io))
             .await
-            .map_err(|e| {
-                AgentdirError::Io(std::io::Error::other(e))
-            })?
+            .map_err(|e| AgentdirError::Io(std::io::Error::other(e)))?
     }
 
     async fn watch(
@@ -237,34 +234,6 @@ mod tests {
             .find(|(p, _)| p.as_path().ends_with("file1.txt"));
         assert!(file1.is_some());
         assert_eq!(file1.unwrap().1.size_bytes, 5);
-    }
-
-    #[tokio::test]
-    async fn test_symlinks_not_followed() {
-        let dir = TempDir::new().unwrap();
-        let target = dir.path().join("target.txt");
-        std::fs::write(&target, b"target content").unwrap();
-
-        let link = dir.path().join("link.txt");
-        #[cfg(unix)]
-        std::os::unix::fs::symlink(&target, &link).unwrap();
-
-        #[cfg(unix)]
-        {
-            let backend = LocalBackend;
-            let root = SourcePath::new(dir.path().to_path_buf());
-            let entries = backend.scan(&root).await.unwrap();
-
-            let link_entry = entries
-                .iter()
-                .find(|(p, _)| p.as_path().ends_with("link.txt"));
-            assert!(link_entry.is_some());
-
-            assert!(matches!(
-                link_entry.unwrap().1.entry_type,
-                EntryType::Symlink { .. }
-            ));
-        }
     }
 
     #[tokio::test]

@@ -22,8 +22,6 @@ pub enum MaterializeResult {
     Copied(u64),
     /// Directory was created.
     DirCreated,
-    /// Symlink was created.
-    SymlinkCreated,
 }
 
 /// Summary of materializing multiple entries.
@@ -32,7 +30,6 @@ pub struct MaterializeSummary {
     pub reflinked: usize,
     pub copied: usize,
     pub dirs_created: usize,
-    pub symlinks_created: usize,
     pub errors: Vec<(VirtualPath, AgentdirError)>,
 }
 
@@ -44,7 +41,6 @@ pub struct BatchResult {
     pub reflinked: usize,
     pub copied: usize,
     pub dirs_created: usize,
-    pub symlinks_created: usize,
     pub errors: Vec<(VirtualPath, AgentdirError)>,
 }
 
@@ -105,26 +101,6 @@ impl Materializer {
                 fs::create_dir_all(&dst)?;
                 info!(?dst, "created materialized directory");
                 Ok(MaterializeResult::DirCreated)
-            }
-            EntryType::Symlink { target } => {
-                if dst.exists() || dst.symlink_metadata().is_ok() {
-                    fs::remove_file(&dst)?;
-                }
-
-                if let Some(parent) = dst.parent() {
-                    fs::create_dir_all(parent)?;
-                }
-
-                #[cfg(unix)]
-                std::os::unix::fs::symlink(target, &dst)?;
-
-                #[cfg(not(unix))]
-                return Err(AgentdirError::ReflinkFailed(
-                    "symlinks not supported on this platform".into(),
-                ));
-
-                info!(?dst, ?target, "created materialized symlink");
-                Ok(MaterializeResult::SymlinkCreated)
             }
         }
     }
@@ -187,10 +163,6 @@ impl Materializer {
                 Ok(MaterializeResult::DirCreated) => {
                     result.succeeded += 1;
                     result.dirs_created += 1;
-                }
-                Ok(MaterializeResult::SymlinkCreated) => {
-                    result.succeeded += 1;
-                    result.symlinks_created += 1;
                 }
                 Err(e) => {
                     result.failed += 1;
@@ -255,7 +227,6 @@ impl Materializer {
                 Ok(MaterializeResult::Reflinked) => summary.reflinked += 1,
                 Ok(MaterializeResult::Copied(_)) => summary.copied += 1,
                 Ok(MaterializeResult::DirCreated) => summary.dirs_created += 1,
-                Ok(MaterializeResult::SymlinkCreated) => summary.symlinks_created += 1,
                 Err(error) => summary.errors.push((entry.virtual_path.clone(), error)),
             }
         }
@@ -441,9 +412,8 @@ mod tests {
         assert_eq!(result.failed, 0);
 
         for i in 0..100 {
-            let path = mat.materialized_path(
-                &VirtualPath::new(format!("/files/file{}.txt", i)).unwrap(),
-            );
+            let path =
+                mat.materialized_path(&VirtualPath::new(format!("/files/file{}.txt", i)).unwrap());
             assert!(path.exists());
         }
     }

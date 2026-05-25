@@ -113,7 +113,10 @@ mod tests {
         let dst = dir.path().join("dst.txt");
 
         let result = clone_file(&src, &dst).unwrap();
-        assert!(matches!(result, CloneResult::Reflinked | CloneResult::Copied(_)));
+        assert!(matches!(
+            result,
+            CloneResult::Reflinked | CloneResult::Copied(_)
+        ));
         assert_eq!(fs::read(&dst).unwrap(), b"hello agentdir");
     }
 
@@ -153,10 +156,9 @@ mod tests {
         let path = write_file(dir.path(), "empty.txt", b"");
         let hash = compute_hash(&path).unwrap();
         let expected = [
-            0xe3, 0xb0, 0xc4, 0x42, 0x98, 0xfc, 0x1c, 0x14,
-            0x9a, 0xfb, 0xf4, 0xc8, 0x99, 0x6f, 0xb9, 0x24,
-            0x27, 0xae, 0x41, 0xe4, 0x64, 0x9b, 0x93, 0x4c,
-            0xa4, 0x95, 0x99, 0x1b, 0x78, 0x52, 0xb8, 0x55,
+            0xe3, 0xb0, 0xc4, 0x42, 0x98, 0xfc, 0x1c, 0x14, 0x9a, 0xfb, 0xf4, 0xc8, 0x99, 0x6f,
+            0xb9, 0x24, 0x27, 0xae, 0x41, 0xe4, 0x64, 0x9b, 0x93, 0x4c, 0xa4, 0x95, 0x99, 0x1b,
+            0x78, 0x52, 0xb8, 0x55,
         ];
         assert_eq!(hash.0, expected);
     }
@@ -169,7 +171,10 @@ mod tests {
 
         let expected_hash = compute_hash(&src).unwrap();
         let result = clone_file_verified(&src, &dst, Some(&expected_hash)).unwrap();
-        assert!(matches!(result, CloneResult::Reflinked | CloneResult::Copied(_)));
+        assert!(matches!(
+            result,
+            CloneResult::Reflinked | CloneResult::Copied(_)
+        ));
     }
 
     #[test]

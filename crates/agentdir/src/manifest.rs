@@ -38,8 +38,8 @@ pub fn save(manifest: &Manifest, path: &Path) -> Result<()> {
 pub fn load(path: &Path) -> Result<Manifest> {
     let content = fs::read_to_string(path)?;
 
-    let manifest: Manifest = serde_json::from_str(&content)
-        .map_err(|e| AgentdirError::ManifestParse(e.to_string()))?;
+    let manifest: Manifest =
+        serde_json::from_str(&content).map_err(|e| AgentdirError::ManifestParse(e.to_string()))?;
 
     if manifest.version != 1 {
         return Err(AgentdirError::ManifestParse(format!(
@@ -48,7 +48,11 @@ pub fn load(path: &Path) -> Result<Manifest> {
         )));
     }
 
-    info!("loaded manifest from {:?} ({} entries)", path, manifest.entries.len());
+    info!(
+        "loaded manifest from {:?} ({} entries)",
+        path,
+        manifest.entries.len()
+    );
     Ok(manifest)
 }
 
@@ -113,9 +117,9 @@ mod tests {
 
     #[test]
     fn test_manifest_path() {
-        let root = Path::new("/tmp/workspace");
-        let path = manifest_path(root);
-        assert_eq!(path, Path::new("/tmp/workspace/.agentdir/manifest.json"));
+        let root = std::env::temp_dir().join("agentdir_test_workspace");
+        let path = manifest_path(&root);
+        assert_eq!(path, root.join(".agentdir/manifest.json"));
     }
 
     #[test]

@@ -156,7 +156,6 @@ impl fmt::Display for ContentHash {
 pub enum EntryType {
     File,
     Directory,
-    Symlink { target: PathBuf },
 }
 
 /// Metadata from the source filesystem.

@@ -143,13 +143,6 @@ async fn test_virtual_operations() {
         std::fs::read(ws_dir.path().join("archive/file_copy.txt")).unwrap(),
         b"original"
     );
-
-    ws.ln(
-        &VirtualPath::new("/archive/file.txt").unwrap(),
-        &VirtualPath::new("/archive/link.txt").unwrap(),
-    )
-    .unwrap();
-    assert!(ws.catalog.get(&VirtualPath::new("/archive/link.txt").unwrap()).is_ok());
 }
 
 /// Test 4: Persistence roundtrip
@@ -355,4 +348,55 @@ async fn test_empty_workspace_operations() {
     assert_eq!(summary.added, 0);
     assert_eq!(summary.removed, 0);
     assert_eq!(summary.refreshed, 0);
+}
+
+/// Test 11: cp'd entries stay in sync when source changes
+#[tokio::test]
+async fn test_cp_refresh_sync() {
+    let src = TempDir::new().unwrap();
+    let ws_dir = TempDir::new().unwrap();
+
+    std::fs::write(src.path().join("file.txt"), b"original").unwrap();
+
+    let mut ws = Workspace::init(ws_dir.path().to_path_buf()).unwrap();
+    ws.map(
+        SourcePath::new(src.path().to_path_buf()),
+        VirtualPath::new("/docs").unwrap(),
+    )
+    .await
+    .unwrap();
+
+    ws.cp(
+        &VirtualPath::new("/docs/file.txt").unwrap(),
+        &VirtualPath::new("/backup/file.txt").unwrap(),
+    )
+    .unwrap();
+
+    assert_eq!(
+        std::fs::read(ws_dir.path().join("docs/file.txt")).unwrap(),
+        b"original"
+    );
+    assert_eq!(
+        std::fs::read(ws_dir.path().join("backup/file.txt")).unwrap(),
+        b"original"
+    );
+
+    std::thread::sleep(std::time::Duration::from_millis(10));
+    std::fs::write(src.path().join("file.txt"), b"modified").unwrap();
+
+    let summary = ws.refresh().await.unwrap();
+    assert!(
+        summary.refreshed >= 2,
+        "Both copies should be refreshed, got {}",
+        summary.refreshed
+    );
+
+    assert_eq!(
+        std::fs::read(ws_dir.path().join("docs/file.txt")).unwrap(),
+        b"modified"
+    );
+    assert_eq!(
+        std::fs::read(ws_dir.path().join("backup/file.txt")).unwrap(),
+        b"modified"
+    );
 }

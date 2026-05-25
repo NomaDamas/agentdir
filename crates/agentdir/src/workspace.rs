@@ -199,20 +199,6 @@ impl Workspace {
         self.save()
     }
 
-    /// Create a virtual symlink.
-    pub fn ln(&mut self, target: &VirtualPath, link: &VirtualPath) -> Result<()> {
-        self.catalog.ln(target, link)?;
-
-        let link_entry = self.catalog.get(link)?.clone();
-        self.materializer.materialize_entry(&link_entry)?;
-
-        if let Ok(entry) = self.catalog.get_mut(link) {
-            entry.materialized = true;
-        }
-
-        self.save()
-    }
-
     /// Rename an entry in the virtual namespace.
     pub fn rename(&mut self, path: &VirtualPath, new_name: &str) -> Result<()> {
         let parent = path
@@ -258,7 +244,9 @@ fn virtual_path_for_source(
     let rel = source_path
         .as_path()
         .strip_prefix(source_root.as_path())
-        .map_err(|_| AgentdirError::InvalidPath(format!("source path {source_path} outside root")))?;
+        .map_err(|_| {
+            AgentdirError::InvalidPath(format!("source path {source_path} outside root"))
+        })?;
 
     virtual_path_for_relative(mount, rel)
 }
@@ -268,8 +256,19 @@ fn virtual_path_for_relative(mount: &VirtualPath, rel: &Path) -> Result<VirtualP
         return Ok(mount.clone());
     }
 
+    // Normalize path separators: use component iteration instead of display()
+    // to ensure forward slashes on all platforms (Windows display() emits backslashes).
+    let rel_str: String = rel
+        .components()
+        .filter_map(|c| match c {
+            std::path::Component::Normal(s) => Some(s.to_string_lossy()),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join("/");
+
     let separator = if mount.as_str() == "/" { "" } else { "/" };
-    VirtualPath::new(format!("{}{separator}{}", mount.as_str(), rel.display()))
+    VirtualPath::new(format!("{}{separator}{rel_str}", mount.as_str()))
 }
 
 #[cfg(test)]
@@ -413,5 +412,29 @@ mod tests {
 
         ws.unmap(&VirtualPath::new("/docs").unwrap()).unwrap();
         assert_eq!(ws.catalog.len(), 0);
+    }
+
+    #[test]
+    fn test_virtual_path_for_relative_normalizes_separators() {
+        let mount = VirtualPath::new("/docs").unwrap();
+        let rel = Path::new("sub").join("file.txt");
+        let result = virtual_path_for_relative(&mount, &rel).unwrap();
+        assert_eq!(result.as_str(), "/docs/sub/file.txt");
+    }
+
+    #[test]
+    fn test_virtual_path_for_relative_root_mount() {
+        let mount = VirtualPath::new("/").unwrap();
+        let rel = Path::new("dir").join("file.txt");
+        let result = virtual_path_for_relative(&mount, &rel).unwrap();
+        assert_eq!(result.as_str(), "/dir/file.txt");
+    }
+
+    #[test]
+    fn test_virtual_path_for_relative_empty_rel() {
+        let mount = VirtualPath::new("/docs").unwrap();
+        let rel = Path::new("");
+        let result = virtual_path_for_relative(&mount, rel).unwrap();
+        assert_eq!(result.as_str(), "/docs");
     }
 }

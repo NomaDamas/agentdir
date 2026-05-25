@@ -10,9 +10,7 @@ use crate::backend::{Backend, SourceEvent};
 use crate::catalog::Catalog;
 use crate::error::{AgentdirError, Result};
 use crate::materializer::Materializer;
-use crate::types::{
-    CatalogEntry, EntryType, SourceMetadata, SourcePath, SourceRoot, VirtualPath,
-};
+use crate::types::{CatalogEntry, EntryType, SourceMetadata, SourcePath, SourceRoot, VirtualPath};
 
 /// An action to apply to the catalog and materialized tree.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -60,10 +58,11 @@ impl Reconciler {
                     }]
                 })
                 .map_or_else(|| Ok(Vec::new()), Ok),
-            SourceEvent::Modified { path } => catalog
-                .find_by_source(path)
-                .map(|entry| {
-                    vec![ChangeAction::Refresh {
+            SourceEvent::Modified { path } => {
+                let entries = catalog.find_all_by_source(path);
+                Ok(entries
+                    .into_iter()
+                    .map(|entry| ChangeAction::Refresh {
                         virtual_path: entry.virtual_path.clone(),
                         source: path.clone(),
                         new_metadata: SourceMetadata {
@@ -71,21 +70,22 @@ impl Reconciler {
                             size_bytes: 0,
                             entry_type: entry.metadata.entry_type.clone(),
                         },
-                    }]
-                })
-                .map_or_else(|| Ok(Vec::new()), Ok),
-            SourceEvent::Deleted { path } => catalog
-                .find_by_source(path)
-                .map(|entry| {
-                    vec![ChangeAction::Remove {
+                    })
+                    .collect())
+            }
+            SourceEvent::Deleted { path } => {
+                let entries = catalog.find_all_by_source(path);
+                Ok(entries
+                    .into_iter()
+                    .map(|entry| ChangeAction::Remove {
                         virtual_path: entry.virtual_path.clone(),
-                    }]
-                })
-                .map_or_else(|| Ok(Vec::new()), Ok),
+                    })
+                    .collect())
+            }
             SourceEvent::Renamed { from, to } => {
                 let mut actions = Vec::new();
 
-                if let Some(entry) = catalog.find_by_source(from) {
+                for entry in catalog.find_all_by_source(from) {
                     actions.push(ChangeAction::Remove {
                         virtual_path: entry.virtual_path.clone(),
                     });
@@ -127,13 +127,16 @@ impl Reconciler {
                     continue;
                 }
 
-                if let Some(entry) = catalog.find_by_source(source_path) {
-                    if metadata_changed(&entry.metadata, scanned_meta) {
-                        actions.push(ChangeAction::Refresh {
-                            virtual_path: entry.virtual_path.clone(),
-                            source: source_path.clone(),
-                            new_metadata: scanned_meta.clone(),
-                        });
+                let existing = catalog.find_all_by_source(source_path);
+                if !existing.is_empty() {
+                    if metadata_changed(&existing[0].metadata, scanned_meta) {
+                        for entry in &existing {
+                            actions.push(ChangeAction::Refresh {
+                                virtual_path: entry.virtual_path.clone(),
+                                source: source_path.clone(),
+                                new_metadata: scanned_meta.clone(),
+                            });
+                        }
                     }
                 } else if let Some(virtual_path) = Self::source_to_virtual(catalog, source_path) {
                     actions.push(ChangeAction::Add {
@@ -145,7 +148,10 @@ impl Reconciler {
             }
 
             for entry in catalog.entries() {
-                if entry.source_path.as_path().starts_with(root.source_path.as_path())
+                if entry
+                    .source_path
+                    .as_path()
+                    .starts_with(root.source_path.as_path())
                     && !scanned_paths.contains(entry.source_path.as_path())
                 {
                     actions.push(ChangeAction::Remove {
@@ -172,7 +178,14 @@ impl Reconciler {
                     source,
                     virtual_path,
                     metadata,
-                } => Self::apply_add(catalog, materializer, &mut summary, source, virtual_path, metadata),
+                } => Self::apply_add(
+                    catalog,
+                    materializer,
+                    &mut summary,
+                    source,
+                    virtual_path,
+                    metadata,
+                ),
                 ChangeAction::Remove { virtual_path } => {
                     Self::apply_remove(catalog, materializer, &mut summary, virtual_path);
                 }
@@ -197,7 +210,10 @@ impl Reconciler {
     /// Compute the virtual path for a source path given the catalog's source roots.
     fn source_to_virtual(catalog: &Catalog, source: &SourcePath) -> Option<VirtualPath> {
         catalog.source_roots().iter().find_map(|root| {
-            let rel = source.as_path().strip_prefix(root.source_path.as_path()).ok()?;
+            let rel = source
+                .as_path()
+                .strip_prefix(root.source_path.as_path())
+                .ok()?;
             virtual_path_for_relative(&root.virtual_mount, rel).ok()
         })
     }
@@ -278,7 +294,14 @@ impl Reconciler {
                 }
             }
             Err(_) => {
-                Self::apply_add(catalog, materializer, summary, source, virtual_path, new_metadata);
+                Self::apply_add(
+                    catalog,
+                    materializer,
+                    summary,
+                    source,
+                    virtual_path,
+                    new_metadata,
+                );
             }
         }
     }
@@ -301,8 +324,19 @@ fn virtual_path_for_relative(mount: &VirtualPath, rel: &Path) -> Result<VirtualP
         return Ok(mount.clone());
     }
 
+    // Normalize path separators: use component iteration instead of display()
+    // to ensure forward slashes on all platforms (Windows display() emits backslashes).
+    let rel_str: String = rel
+        .components()
+        .filter_map(|c| match c {
+            std::path::Component::Normal(s) => Some(s.to_string_lossy()),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join("/");
+
     let separator = if mount.as_str() == "/" { "" } else { "/" };
-    VirtualPath::new(format!("{}{separator}{}", mount.as_str(), rel.display()))
+    VirtualPath::new(format!("{}{separator}{rel_str}", mount.as_str()))
 }
 
 #[cfg(test)]
@@ -400,6 +434,36 @@ mod tests {
         assert!(matches!(actions[0], ChangeAction::Refresh { .. }));
     }
 
+    #[test]
+    fn test_from_event_modified_refreshes_all_copies() {
+        let src_dir = TempDir::new().unwrap();
+        let mat_dir = TempDir::new().unwrap();
+        let mut catalog = setup_catalog_with_root(src_dir.path(), mat_dir.path());
+
+        let src_file = src_dir.path().join("file.txt");
+        std::fs::write(&src_file, b"content").unwrap();
+        catalog
+            .add_entries(vec![
+                make_entry(src_file.clone(), "/docs/file.txt"),
+                make_entry(src_file.clone(), "/backup/file.txt"),
+            ])
+            .unwrap();
+
+        let event = SourceEvent::Modified {
+            path: SourcePath::new(src_file),
+        };
+
+        let actions = Reconciler::from_event(&catalog, &event).unwrap();
+        assert_eq!(actions.len(), 2);
+        assert_eq!(
+            actions
+                .iter()
+                .filter(|action| matches!(action, ChangeAction::Refresh { .. }))
+                .count(),
+            2
+        );
+    }
+
     #[tokio::test]
     async fn test_full_reconcile_detects_new_file() {
         let src_dir = TempDir::new().unwrap();
@@ -415,7 +479,9 @@ mod tests {
             .unwrap();
 
         assert!(!actions.is_empty());
-        assert!(actions.iter().any(|a| matches!(a, ChangeAction::Add { .. })));
+        assert!(actions
+            .iter()
+            .any(|a| matches!(a, ChangeAction::Add { .. })));
     }
 
     #[tokio::test]
@@ -439,6 +505,36 @@ mod tests {
         assert!(actions
             .iter()
             .any(|a| matches!(a, ChangeAction::Refresh { .. })));
+    }
+
+    #[tokio::test]
+    async fn test_full_reconcile_refreshes_all_copies() {
+        let src_dir = TempDir::new().unwrap();
+        let mat_dir = TempDir::new().unwrap();
+        let mut catalog = setup_catalog_with_root(src_dir.path(), mat_dir.path());
+
+        let src_file = src_dir.path().join("file.txt");
+        std::fs::write(&src_file, b"changed content").unwrap();
+        catalog
+            .add_entries(vec![
+                make_entry(src_file.clone(), "/docs/file.txt"),
+                make_entry(src_file, "/backup/file.txt"),
+            ])
+            .unwrap();
+
+        let backend = LocalBackend;
+        let roots = catalog.source_roots().to_vec();
+        let actions = Reconciler::full_reconcile(&catalog, &backend, &roots)
+            .await
+            .unwrap();
+
+        assert_eq!(
+            actions
+                .iter()
+                .filter(|action| matches!(action, ChangeAction::Refresh { .. }))
+                .count(),
+            2
+        );
     }
 
     #[tokio::test]
