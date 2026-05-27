@@ -9,6 +9,7 @@ use crate::types::{
 /// In-memory virtual filesystem catalog.
 ///
 /// Maps virtual paths to source file locations. Pure data — no filesystem operations.
+#[derive(Clone)]
 pub struct Catalog {
     /// The persisted manifest (source of truth for entries and source roots).
     pub manifest: Manifest,
@@ -48,9 +49,25 @@ impl Catalog {
         }
     }
 
-    /// Register a source root mapping. Validates no overlap with materialized_root.
+    /// Register a source root mapping.
+    ///
+    /// Rejects overlaps with the materialized root and with already-registered
+    /// source roots so the same real files cannot be cataloged twice.
     pub fn add_source_root(&mut self, source_root: SourceRoot) -> Result<()> {
         Self::validate_no_overlap(source_root.source_path.as_path(), &self.materialized_root)?;
+
+        for existing in &self.manifest.source_roots {
+            let new_path = comparable_path(source_root.source_path.as_path());
+            let existing_path = comparable_path(existing.source_path.as_path());
+            if new_path.starts_with(&existing_path) || existing_path.starts_with(&new_path) {
+                return Err(AgentdirError::PathOverlap(format!(
+                    "source root {:?} overlaps existing source root {:?}",
+                    source_root.source_path.as_path(),
+                    existing.source_path.as_path()
+                )));
+            }
+        }
+
         self.manifest.source_roots.push(source_root);
         self.manifest.touch();
         Ok(())
@@ -154,53 +171,106 @@ impl Catalog {
         Ok(())
     }
 
-    /// Move/rename an entry in the virtual namespace.
+    /// Move/rename an entry or directory subtree in the virtual namespace.
     pub fn mv(&mut self, from: &VirtualPath, to: &VirtualPath) -> Result<()> {
         let from_key = from.as_str().to_string();
         let to_key = to.as_str().to_string();
 
+        if !self.entry_index.contains_key(&from_key) {
+            return Err(AgentdirError::EntryNotFound(from_key));
+        }
         if self.entry_index.contains_key(&to_key) {
             return Err(AgentdirError::EntryExists(to_key));
         }
 
-        let index = self
-            .entry_index
-            .remove(&from_key)
-            .ok_or_else(|| AgentdirError::EntryNotFound(from_key.clone()))?;
+        let affected = self.affected_indices(from);
+        let rebased: Vec<VirtualPath> = affected
+            .iter()
+            .map(|&index| rebase_virtual_path(&self.manifest.entries[index].virtual_path, from, to))
+            .collect::<Result<_>>()?;
 
-        self.manifest.entries[index].virtual_path = to.clone();
-        self.entry_index.insert(to_key, index);
+        for new_path in &rebased {
+            if self.entry_index.contains_key(new_path.as_str()) {
+                return Err(AgentdirError::EntryExists(new_path.as_str().to_string()));
+            }
+        }
+
+        for (index, new_path) in affected.into_iter().zip(rebased) {
+            self.manifest.entries[index].virtual_path = new_path;
+        }
+        self.rebuild_index();
         self.manifest.touch();
         Ok(())
     }
 
-    /// Copy an entry to a new virtual path, preserving its source reference.
+    /// Copy an entry or directory subtree to a new virtual path, preserving source references.
     pub fn cp(&mut self, from: &VirtualPath, to: &VirtualPath) -> Result<()> {
         let from_key = from.as_str().to_string();
         let to_key = to.as_str().to_string();
 
+        if !self.entry_index.contains_key(&from_key) {
+            return Err(AgentdirError::EntryNotFound(from_key));
+        }
         if self.entry_index.contains_key(&to_key) {
             return Err(AgentdirError::EntryExists(to_key));
         }
 
-        let index = *self
-            .entry_index
-            .get(&from_key)
-            .ok_or(AgentdirError::EntryNotFound(from_key))?;
+        let affected = self.affected_indices(from);
+        let mut new_entries = Vec::with_capacity(affected.len());
+        for index in affected {
+            let mut new_entry = self.manifest.entries[index].clone();
+            new_entry.virtual_path = rebase_virtual_path(&new_entry.virtual_path, from, to)?;
+            new_entry.materialized = false;
+            if self
+                .entry_index
+                .contains_key(new_entry.virtual_path.as_str())
+            {
+                return Err(AgentdirError::EntryExists(
+                    new_entry.virtual_path.as_str().to_string(),
+                ));
+            }
+            new_entries.push(new_entry);
+        }
 
-        let mut new_entry = self.manifest.entries[index].clone();
-        new_entry.virtual_path = to.clone();
-        new_entry.materialized = false;
-
-        let new_index = self.manifest.entries.len();
-        self.entry_index.insert(to_key, new_index);
-        self.manifest.entries.push(new_entry);
+        for entry in new_entries {
+            let key = entry.virtual_path.as_str().to_string();
+            let new_index = self.manifest.entries.len();
+            self.entry_index.insert(key, new_index);
+            self.manifest.entries.push(entry);
+        }
         self.manifest.touch();
         Ok(())
     }
 
+    /// Return cloned entries affected by an exact path or subtree operation.
+    pub fn entries_under(&self, path: &VirtualPath) -> Result<Vec<CatalogEntry>> {
+        if !self.entry_index.contains_key(path.as_str()) {
+            return Err(AgentdirError::EntryNotFound(path.as_str().to_string()));
+        }
+        Ok(self
+            .affected_indices(path)
+            .into_iter()
+            .map(|index| self.manifest.entries[index].clone())
+            .collect())
+    }
+
+    fn affected_indices(&self, path: &VirtualPath) -> Vec<usize> {
+        let prefix = path.as_str();
+        let child_prefix = child_prefix(prefix);
+        self.manifest
+            .entries
+            .iter()
+            .enumerate()
+            .filter_map(|(index, entry)| {
+                let entry_path = entry.virtual_path.as_str();
+                (entry_path == prefix || entry_path.starts_with(&child_prefix)).then_some(index)
+            })
+            .collect()
+    }
+
     /// Rename an entry without changing its parent directory.
     pub fn rename(&mut self, path: &VirtualPath, new_name: &str) -> Result<()> {
+        validate_new_name(new_name)?;
         let parent = path
             .parent()
             .ok_or_else(|| AgentdirError::InvalidPath("cannot rename root".into()))?;
@@ -296,7 +366,11 @@ impl Catalog {
 
     /// Validate that source and materialized paths don't overlap.
     pub fn validate_no_overlap(source: &Path, materialized: &Path) -> Result<()> {
-        if source.starts_with(materialized) || materialized.starts_with(source) {
+        let comparable_source = comparable_path(source);
+        let comparable_materialized = comparable_path(materialized);
+        if comparable_source.starts_with(&comparable_materialized)
+            || comparable_materialized.starts_with(&comparable_source)
+        {
             return Err(AgentdirError::PathOverlap(format!(
                 "source {source:?} and materialized {materialized:?} overlap"
             )));
@@ -305,12 +379,56 @@ impl Catalog {
     }
 }
 
+fn comparable_path(path: &Path) -> PathBuf {
+    path.canonicalize().unwrap_or_else(|_| {
+        if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            std::env::current_dir()
+                .unwrap_or_else(|_| PathBuf::from("."))
+                .join(path)
+        }
+    })
+}
+
 fn child_prefix(path: &str) -> String {
     if path == "/" {
         "/".to_string()
     } else {
         format!("{path}/")
     }
+}
+
+fn rebase_virtual_path(
+    path: &VirtualPath,
+    from: &VirtualPath,
+    to: &VirtualPath,
+) -> Result<VirtualPath> {
+    if path.as_str() == from.as_str() {
+        return Ok(to.clone());
+    }
+
+    let from_child_prefix = child_prefix(from.as_str());
+    let rest = path
+        .as_str()
+        .strip_prefix(&from_child_prefix)
+        .ok_or_else(|| AgentdirError::InvalidPath(format!("{} is not under {}", path, from)))?;
+    let separator = if to.as_str() == "/" { "" } else { "/" };
+    VirtualPath::new(format!("{}{separator}{rest}", to.as_str()))
+}
+
+fn validate_new_name(new_name: &str) -> Result<()> {
+    if new_name.contains('/') || new_name.contains('\\') {
+        return Err(AgentdirError::InvalidPath(
+            "new name must not contain path separators".into(),
+        ));
+    }
+    if new_name.is_empty() {
+        return Err(AgentdirError::InvalidPath(
+            "new name must not be empty".into(),
+        ));
+    }
+    Ok(())
 }
 
 #[cfg(test)]

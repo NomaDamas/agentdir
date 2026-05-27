@@ -235,7 +235,10 @@ async fn test_rename_with_slash_in_new_name() {
     .await
     .unwrap();
 
-    let result = ws.rename(&VirtualPath::new("/mount/file.txt").unwrap(), "sub/file.txt");
+    let result = ws.rename(
+        &VirtualPath::new("/mount/file.txt").unwrap(),
+        "sub/file.txt",
+    );
 
     assert!(
         result.is_err(),

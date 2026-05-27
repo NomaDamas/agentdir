@@ -2,9 +2,21 @@
 //!
 //! This is the single entry point for all agentdir operations.
 //! Every mutation saves the manifest atomically after success.
+//!
+//! Consistency model: reconciliation preflights every action before mutating the
+//! catalog, then applies filesystem work before catalog mutations where possible.
+//! If a source file disappears or a destination is invalid between scan and apply,
+//! the refresh reports errors and leaves the previously persisted catalog intact.
+//!
+//! Thread-safety model: `Workspace` methods require `&mut self` for mutation.
+//! Multi-task consumers should share a workspace as [`SharedWorkspace`], a
+//! `tokio::sync::RwLock` wrapper that serializes mutations while allowing
+//! read-side access through explicit read guards.
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+
+use tokio::sync::RwLock;
 
 use crate::backend::{Backend, LocalBackend};
 use crate::catalog::Catalog;
@@ -13,6 +25,9 @@ use crate::manifest;
 use crate::materializer::Materializer;
 use crate::reconciler::{ReconcileSummary, Reconciler};
 use crate::types::{CatalogEntry, SourcePath, SourceRoot, VirtualPath};
+
+/// Shared workspace handle for concurrent async consumers.
+pub type SharedWorkspace = Arc<RwLock<Workspace>>;
 
 /// Summary of a map operation.
 #[derive(Debug, Default)]
@@ -82,10 +97,16 @@ impl Workspace {
         })
     }
 
+    /// Wrap this workspace in an async RwLock for concurrent consumers.
+    pub fn into_shared(self) -> SharedWorkspace {
+        Arc::new(RwLock::new(self))
+    }
+
     /// Map a source directory into the virtual tree at the given mount point.
     ///
     /// Scans the source, adds entries to catalog, materializes all files.
     pub async fn map(&mut self, source: SourcePath, mount: VirtualPath) -> Result<MapSummary> {
+        validate_absolute_virtual_path(&mount, "mount point")?;
         self.catalog.add_source_root(SourceRoot {
             source_path: source.clone(),
             virtual_mount: mount.clone(),
@@ -161,13 +182,35 @@ impl Workspace {
 
     /// Remove a virtual directory.
     pub fn rmdir(&mut self, path: &VirtualPath, recursive: bool) -> Result<()> {
-        self.materializer.dematerialize_entry(path)?;
+        let subtree = self.catalog.entries_under(path)?;
+        if !recursive && subtree.len() > 1 {
+            return Err(AgentdirError::EntryExists(format!(
+                "directory {path} is not empty"
+            )));
+        }
+
+        if recursive {
+            let paths: Vec<_> = subtree
+                .into_iter()
+                .map(|entry| entry.virtual_path)
+                .collect();
+            let result = self.materializer.dematerialize_batch(&paths)?;
+            if let Some((failed_path, error)) = result.errors.into_iter().next() {
+                return Err(AgentdirError::Io(std::io::Error::other(format!(
+                    "failed to dematerialize {failed_path}: {error}"
+                ))));
+            }
+        } else {
+            self.materializer.dematerialize_entry(path)?;
+        }
         self.catalog.rmdir(path, recursive)?;
         self.save()
     }
 
     /// Move an entry in the virtual namespace.
     pub fn mv(&mut self, from: &VirtualPath, to: &VirtualPath) -> Result<()> {
+        self.preflight_rebase(from, to, true)?;
+
         let from_path = self.materializer.materialized_path(from);
         let to_path = self.materializer.materialized_path(to);
 
@@ -185,22 +228,82 @@ impl Workspace {
 
     /// Copy an entry in the virtual namespace.
     pub fn cp(&mut self, from: &VirtualPath, to: &VirtualPath) -> Result<()> {
-        let mut new_entry = self.catalog.get(from)?.clone();
-        new_entry.virtual_path = to.clone();
-        new_entry.materialized = false;
+        let new_entries = self.preflight_rebase(from, to, false)?;
 
-        self.materializer.materialize_entry(&new_entry)?;
-        self.catalog.cp(from, to)?;
+        let mut materialized = Vec::new();
+        for entry in &new_entries {
+            match self.materializer.materialize_entry(entry) {
+                Ok(_) => materialized.push(entry.virtual_path.clone()),
+                Err(error) => {
+                    let _ = self.materializer.dematerialize_batch(&materialized);
+                    return Err(error);
+                }
+            }
+        }
 
-        if let Ok(entry) = self.catalog.get_mut(to) {
-            entry.materialized = true;
+        if let Err(error) = self.catalog.cp(from, to) {
+            let _ = self.materializer.dematerialize_batch(&materialized);
+            return Err(error);
+        }
+
+        for entry in &new_entries {
+            if let Ok(catalog_entry) = self.catalog.get_mut(&entry.virtual_path) {
+                catalog_entry.materialized = true;
+            }
         }
 
         self.save()
     }
 
+    fn preflight_rebase(
+        &self,
+        from: &VirtualPath,
+        to: &VirtualPath,
+        is_move: bool,
+    ) -> Result<Vec<CatalogEntry>> {
+        let source_entries = self.catalog.entries_under(from)?;
+        let source_paths: std::collections::HashSet<_> = source_entries
+            .iter()
+            .map(|entry| entry.virtual_path.as_str().to_string())
+            .collect();
+        let mut seen = std::collections::HashSet::new();
+        let mut new_entries = Vec::with_capacity(source_entries.len());
+
+        for entry in &source_entries {
+            let mut new_entry = entry.clone();
+            new_entry.virtual_path = rebase_virtual_path(&entry.virtual_path, from, to)?;
+            new_entry.materialized = false;
+            let key = new_entry.virtual_path.as_str().to_string();
+
+            if !seen.insert(key.clone()) {
+                return Err(AgentdirError::EntryExists(key));
+            }
+
+            let destination_owned_by_move_source = is_move && source_paths.contains(&key);
+            if !destination_owned_by_move_source
+                && self.catalog.get(&new_entry.virtual_path).is_ok()
+            {
+                return Err(AgentdirError::EntryExists(key));
+            }
+
+            let materialized = self.materializer.materialized_path(&new_entry.virtual_path);
+            if !destination_owned_by_move_source
+                && (materialized.exists() || materialized.symlink_metadata().is_ok())
+            {
+                return Err(AgentdirError::EntryExists(
+                    new_entry.virtual_path.as_str().to_string(),
+                ));
+            }
+
+            new_entries.push(new_entry);
+        }
+
+        Ok(new_entries)
+    }
+
     /// Rename an entry in the virtual namespace.
     pub fn rename(&mut self, path: &VirtualPath, new_name: &str) -> Result<()> {
+        validate_new_name(new_name)?;
         let parent = path
             .parent()
             .ok_or_else(|| AgentdirError::InvalidPath("cannot rename root".into()))?;
@@ -211,12 +314,27 @@ impl Workspace {
 
     /// Run a full reconciliation — detect source changes and update the virtual tree.
     pub async fn refresh(&mut self) -> Result<ReconcileSummary> {
+        self.refresh_with_hash_verification(false).await
+    }
+
+    /// Run reconciliation with optional SHA-256 verification for unchanged mtime/size.
+    pub async fn refresh_with_hash_verification(
+        &mut self,
+        verify_hashes: bool,
+    ) -> Result<ReconcileSummary> {
         let roots = self.catalog.source_roots().to_vec();
-        let actions =
-            Reconciler::full_reconcile(&self.catalog, self.backend.as_ref(), &roots).await?;
+        let actions = Reconciler::full_reconcile_with_options(
+            &self.catalog,
+            self.backend.as_ref(),
+            &roots,
+            verify_hashes,
+        )
+        .await?;
         let summary = Reconciler::apply_actions(&mut self.catalog, &self.materializer, &actions)?;
 
-        self.save()?;
+        if summary.errors.is_empty() {
+            self.save()?;
+        }
         Ok(summary)
     }
 
@@ -437,4 +555,48 @@ mod tests {
         let result = virtual_path_for_relative(&mount, rel).unwrap();
         assert_eq!(result.as_str(), "/docs");
     }
+}
+
+fn validate_absolute_virtual_path(path: &VirtualPath, label: &str) -> Result<()> {
+    if !path.is_absolute() {
+        return Err(AgentdirError::InvalidPath(format!(
+            "{label} must be an absolute virtual path"
+        )));
+    }
+    Ok(())
+}
+
+fn validate_new_name(new_name: &str) -> Result<()> {
+    if new_name.contains('/') || new_name.contains('\\') {
+        return Err(AgentdirError::InvalidPath(
+            "new name must not contain path separators".into(),
+        ));
+    }
+    if new_name.is_empty() {
+        return Err(AgentdirError::InvalidPath(
+            "new name must not be empty".into(),
+        ));
+    }
+    Ok(())
+}
+
+fn rebase_virtual_path(
+    path: &VirtualPath,
+    from: &VirtualPath,
+    to: &VirtualPath,
+) -> Result<VirtualPath> {
+    if path.as_str() == from.as_str() {
+        return Ok(to.clone());
+    }
+    let from_prefix = if from.as_str() == "/" {
+        "/".to_string()
+    } else {
+        format!("{}/", from.as_str())
+    };
+    let rest = path
+        .as_str()
+        .strip_prefix(&from_prefix)
+        .ok_or_else(|| AgentdirError::InvalidPath(format!("{} is not under {}", path, from)))?;
+    let separator = if to.as_str() == "/" { "" } else { "/" };
+    VirtualPath::new(format!("{}{separator}{rest}", to.as_str()))
 }

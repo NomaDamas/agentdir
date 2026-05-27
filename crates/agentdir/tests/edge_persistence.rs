@@ -169,7 +169,9 @@ async fn test_no_tmp_file_left_after_save() {
     let ws = Workspace::init(ws_dir.path().to_path_buf()).unwrap();
     ws.save().unwrap();
 
-    assert!(!manifest_path(ws_dir.path()).with_extension("json.tmp").exists());
+    assert!(!manifest_path(ws_dir.path())
+        .with_extension("json.tmp")
+        .exists());
 }
 
 #[tokio::test]

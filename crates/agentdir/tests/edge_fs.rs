@@ -64,7 +64,10 @@ async fn test_binary_file_content_preserved() {
     let mut ws = Workspace::init(ws_dir.path().to_path_buf()).unwrap();
     map_source(&mut ws, &src, "/files").await.unwrap();
 
-    assert_eq!(std::fs::read(ws_dir.path().join("files/binary.bin")).unwrap(), bytes);
+    assert_eq!(
+        std::fs::read(ws_dir.path().join("files/binary.bin")).unwrap(),
+        bytes
+    );
 }
 
 #[tokio::test]
@@ -196,7 +199,10 @@ async fn test_source_becomes_unreadable_after_map() {
     std::fs::set_permissions(&locked, original_permissions).unwrap();
 
     assert!(!summary.errors.is_empty());
-    assert_eq!(std::fs::read(ws_dir.path().join("docs/other.txt")).unwrap(), b"other");
+    assert_eq!(
+        std::fs::read(ws_dir.path().join("docs/other.txt")).unwrap(),
+        b"other"
+    );
 }
 
 #[tokio::test]
@@ -216,7 +222,10 @@ async fn test_materialized_file_manually_deleted() {
     let summary = ws.refresh().await.unwrap();
 
     assert!(summary.refreshed >= 1);
-    assert_eq!(std::fs::read(ws_dir.path().join("docs/file.txt")).unwrap(), b"modified");
+    assert_eq!(
+        std::fs::read(ws_dir.path().join("docs/file.txt")).unwrap(),
+        b"modified"
+    );
 }
 
 #[tokio::test]
@@ -253,7 +262,10 @@ async fn test_filename_with_special_chars() {
     map_source(&mut ws, &src, "/docs").await.unwrap();
 
     for name in ["file#1.txt", "file@2.txt", "file(3).txt"] {
-        assert_eq!(std::fs::read(ws_dir.path().join("docs").join(name)).unwrap(), name.as_bytes());
+        assert_eq!(
+            std::fs::read(ws_dir.path().join("docs").join(name)).unwrap(),
+            name.as_bytes()
+        );
     }
 }
 
@@ -271,7 +283,10 @@ async fn test_dot_files_and_dot_dirs() {
 
     assert!(ws.catalog.get(&vp("/docs/.hidden")).is_ok());
     assert!(ws.catalog.get(&vp("/docs/.config/settings.json")).is_ok());
-    assert_eq!(std::fs::read(ws_dir.path().join("docs/.hidden")).unwrap(), b"hidden");
+    assert_eq!(
+        std::fs::read(ws_dir.path().join("docs/.hidden")).unwrap(),
+        b"hidden"
+    );
     assert_eq!(
         std::fs::read(ws_dir.path().join("docs/.config/settings.json")).unwrap(),
         b"{}"

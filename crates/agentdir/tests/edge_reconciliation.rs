@@ -40,7 +40,10 @@ async fn test_refresh_no_changes_returns_zero_counts() {
     assert_eq!(summary.removed, 0);
     assert_eq!(summary.refreshed, 0);
     assert!(summary.errors.is_empty());
-    assert!(ws.catalog.get(&VirtualPath::new("/mount/file.txt").unwrap()).is_ok());
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/mount/file.txt").unwrap())
+        .is_ok());
 }
 
 #[tokio::test]
@@ -60,8 +63,14 @@ async fn test_refresh_detects_mtime_change() {
     let summary = ws.refresh().await.unwrap();
 
     assert!(summary.refreshed >= 1);
-    assert!(ws.catalog.get(&VirtualPath::new("/mount/file.txt").unwrap()).is_ok());
-    assert_eq!(std::fs::read(ws_dir.path().join("mount/file.txt")).unwrap(), b"same");
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/mount/file.txt").unwrap())
+        .is_ok());
+    assert_eq!(
+        std::fs::read(ws_dir.path().join("mount/file.txt")).unwrap(),
+        b"same"
+    );
 }
 
 #[tokio::test]
@@ -81,8 +90,14 @@ async fn test_refresh_detects_content_change() {
     let summary = ws.refresh().await.unwrap();
 
     assert!(summary.refreshed >= 1);
-    assert!(ws.catalog.get(&VirtualPath::new("/mount/file.txt").unwrap()).is_ok());
-    assert_eq!(std::fs::read(ws_dir.path().join("mount/file.txt")).unwrap(), b"new content");
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/mount/file.txt").unwrap())
+        .is_ok());
+    assert_eq!(
+        std::fs::read(ws_dir.path().join("mount/file.txt")).unwrap(),
+        b"new content"
+    );
 }
 
 #[tokio::test]
@@ -102,16 +117,20 @@ async fn test_refresh_detects_new_file() {
     let summary = ws.refresh().await.unwrap();
 
     assert!(summary.added >= 1);
-    assert!(ws.catalog.get(&VirtualPath::new("/mount/new.txt").unwrap()).is_ok());
-    assert_eq!(std::fs::read(ws_dir.path().join("mount/new.txt")).unwrap(), b"new");
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/mount/new.txt").unwrap())
+        .is_ok());
+    assert_eq!(
+        std::fs::read(ws_dir.path().join("mount/new.txt")).unwrap(),
+        b"new"
+    );
 }
 
 #[tokio::test]
 async fn test_refresh_detects_deleted_file() {
-    let (src, ws_dir, mut ws) = setup_workspace_with_files(&[
-        ("keep.txt", b"keep"),
-        ("delete.txt", b"delete"),
-    ]);
+    let (src, ws_dir, mut ws) =
+        setup_workspace_with_files(&[("keep.txt", b"keep"), ("delete.txt", b"delete")]);
 
     ws.map(
         SourcePath::new(src.path().to_path_buf()),
@@ -126,9 +145,15 @@ async fn test_refresh_detects_deleted_file() {
     let summary = ws.refresh().await.unwrap();
 
     assert!(summary.removed >= 1);
-    assert!(ws.catalog.get(&VirtualPath::new("/mount/delete.txt").unwrap()).is_err());
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/mount/delete.txt").unwrap())
+        .is_err());
     assert!(!ws_dir.path().join("mount/delete.txt").exists());
-    assert!(ws.catalog.get(&VirtualPath::new("/mount/keep.txt").unwrap()).is_ok());
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/mount/keep.txt").unwrap())
+        .is_ok());
 }
 
 #[tokio::test]
@@ -157,10 +182,22 @@ async fn test_refresh_multiple_changes_simultaneously() {
     assert!(summary.added >= 2);
     assert!(summary.refreshed >= 1);
     assert!(summary.removed >= 1);
-    assert!(ws.catalog.get(&VirtualPath::new("/mount/added-a.txt").unwrap()).is_ok());
-    assert!(ws.catalog.get(&VirtualPath::new("/mount/added-b.txt").unwrap()).is_ok());
-    assert!(ws.catalog.get(&VirtualPath::new("/mount/two.txt").unwrap()).is_err());
-    assert_eq!(std::fs::read(ws_dir.path().join("mount/one.txt")).unwrap(), b"one modified");
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/mount/added-a.txt").unwrap())
+        .is_ok());
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/mount/added-b.txt").unwrap())
+        .is_ok());
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/mount/two.txt").unwrap())
+        .is_err());
+    assert_eq!(
+        std::fs::read(ws_dir.path().join("mount/one.txt")).unwrap(),
+        b"one modified"
+    );
 }
 
 #[tokio::test]
@@ -193,8 +230,14 @@ async fn test_refresh_cp_updates_all_copies() {
     for path in ["mount/file.txt", "copies/file-a.txt", "copies/file-b.txt"] {
         assert_eq!(std::fs::read(ws_dir.path().join(path)).unwrap(), b"updated");
     }
-    assert!(ws.catalog.get(&VirtualPath::new("/copies/file-a.txt").unwrap()).is_ok());
-    assert!(ws.catalog.get(&VirtualPath::new("/copies/file-b.txt").unwrap()).is_ok());
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/copies/file-a.txt").unwrap())
+        .is_ok());
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/copies/file-b.txt").unwrap())
+        .is_ok());
 }
 
 #[tokio::test]
@@ -226,9 +269,15 @@ async fn test_refresh_after_unmap_ignores_old_root() {
     let summary = ws.refresh().await.unwrap();
 
     assert_eq!(summary.added, 0);
-    assert!(ws.catalog.get(&VirtualPath::new("/a/new-from-a.txt").unwrap()).is_err());
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/a/new-from-a.txt").unwrap())
+        .is_err());
     assert!(!ws_dir.path().join("a/new-from-a.txt").exists());
-    assert!(ws.catalog.get(&VirtualPath::new("/b/b.txt").unwrap()).is_ok());
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/b/b.txt").unwrap())
+        .is_ok());
     assert_eq!(std::fs::read(ws_dir.path().join("b/b.txt")).unwrap(), b"b");
 }
 
@@ -253,7 +302,10 @@ async fn test_double_refresh_is_idempotent() {
     assert_eq!(second.added, 0);
     assert_eq!(second.removed, 0);
     assert_eq!(second.refreshed, 0);
-    assert!(ws.catalog.get(&VirtualPath::new("/mount/file.txt").unwrap()).is_ok());
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/mount/file.txt").unwrap())
+        .is_ok());
 }
 
 #[tokio::test]
@@ -274,8 +326,14 @@ async fn test_source_replaced_with_different_content() {
     let summary = ws.refresh().await.unwrap();
 
     assert!(summary.refreshed >= 1);
-    assert!(ws.catalog.get(&VirtualPath::new("/mount/file.txt").unwrap()).is_ok());
-    assert_eq!(std::fs::read(ws_dir.path().join("mount/file.txt")).unwrap(), replacement);
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/mount/file.txt").unwrap())
+        .is_ok());
+    assert_eq!(
+        std::fs::read(ws_dir.path().join("mount/file.txt")).unwrap(),
+        replacement
+    );
 }
 
 #[tokio::test]
@@ -297,8 +355,14 @@ async fn test_rapid_source_modifications() {
     let summary = ws.refresh().await.unwrap();
 
     assert!(summary.refreshed >= 1);
-    assert!(ws.catalog.get(&VirtualPath::new("/mount/file.txt").unwrap()).is_ok());
-    assert_eq!(std::fs::read(ws_dir.path().join("mount/file.txt")).unwrap(), b"content 9");
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/mount/file.txt").unwrap())
+        .is_ok());
+    assert_eq!(
+        std::fs::read(ws_dir.path().join("mount/file.txt")).unwrap(),
+        b"content 9"
+    );
 }
 
 #[tokio::test]
@@ -319,7 +383,10 @@ async fn test_new_subdirectory_with_files_detected() {
     let summary = ws.refresh().await.unwrap();
 
     assert!(summary.added >= 1);
-    assert!(ws.catalog.get(&VirtualPath::new("/mount/newdir/newfile.txt").unwrap()).is_ok());
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/mount/newdir/newfile.txt").unwrap())
+        .is_ok());
     assert_eq!(
         std::fs::read(ws_dir.path().join("mount/newdir/newfile.txt")).unwrap(),
         b"nested"
@@ -336,11 +403,15 @@ async fn test_refresh_preserves_virtual_only_directories() {
     )
     .await
     .unwrap();
-    ws.mkdir(&VirtualPath::new("/virtual-dir").unwrap()).unwrap();
+    ws.mkdir(&VirtualPath::new("/virtual-dir").unwrap())
+        .unwrap();
 
     let summary = ws.refresh().await.unwrap();
 
     assert!(summary.errors.is_empty());
-    assert!(ws.catalog.get(&VirtualPath::new("/virtual-dir").unwrap()).is_ok());
+    assert!(ws
+        .catalog
+        .get(&VirtualPath::new("/virtual-dir").unwrap())
+        .is_ok());
     assert!(ws_dir.path().join("virtual-dir").exists());
 }

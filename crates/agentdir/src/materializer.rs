@@ -6,6 +6,7 @@
 use std::cmp::Ordering;
 use std::fs;
 use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use tracing::info;
 
@@ -118,10 +119,48 @@ impl Materializer {
         Ok(())
     }
 
-    /// Refresh a materialized entry (dematerialize + re-materialize).
+    /// Refresh a materialized entry.
+    ///
+    /// File refreshes clone into a temporary sibling first, then rename over the
+    /// destination only after clone/copy succeeds. That preserves the previous
+    /// materialized file if the source read fails mid-refresh. Directories are
+    /// idempotently recreated.
     pub fn refresh_entry(&self, entry: &CatalogEntry) -> Result<MaterializeResult> {
-        self.dematerialize_entry(&entry.virtual_path)?;
-        self.materialize_entry(entry)
+        let dst = self.materialized_path(&entry.virtual_path);
+
+        match &entry.metadata.entry_type {
+            EntryType::File => {
+                let parent = dst.parent().ok_or_else(|| {
+                    AgentdirError::InvalidPath(format!("materialized path {:?} has no parent", dst))
+                })?;
+                fs::create_dir_all(parent)?;
+                let tmp = parent.join(format!(
+                    ".agentdir-refresh-{}-{}",
+                    std::process::id(),
+                    SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_nanos()
+                ));
+
+                let result = match reflink::clone_file(entry.source_path.as_path(), &tmp) {
+                    Ok(CloneResult::Reflinked) => MaterializeResult::Reflinked,
+                    Ok(CloneResult::Copied(bytes)) => MaterializeResult::Copied(bytes),
+                    Err(error) => {
+                        let _ = fs::remove_file(&tmp);
+                        return Err(error);
+                    }
+                };
+
+                if let Err(error) = fs::rename(&tmp, &dst) {
+                    let _ = fs::remove_file(&tmp);
+                    return Err(AgentdirError::Io(error));
+                }
+
+                Ok(result)
+            }
+            EntryType::Directory => self.materialize_entry(entry),
+        }
     }
 
     /// Materialize entries in batches with optional progress reporting.

@@ -9,7 +9,9 @@ pub struct VirtualPath(String);
 
 impl VirtualPath {
     pub fn new(s: impl AsRef<str>) -> Result<Self, crate::error::AgentdirError> {
-        let s = s.as_ref();
+        let raw = s.as_ref();
+        let normalized_separators = raw.replace('\\', "/");
+        let s = normalized_separators.as_str();
         if s.is_empty() {
             return Err(crate::error::AgentdirError::InvalidPath(
                 "empty path".into(),
@@ -60,6 +62,11 @@ impl VirtualPath {
         Path::new(&self.0)
     }
 
+    /// Returns true when this virtual path uses absolute `/...` notation.
+    pub fn is_absolute(&self) -> bool {
+        self.0.starts_with('/')
+    }
+
     /// Returns the parent virtual path.
     pub fn parent(&self) -> Option<VirtualPath> {
         self.as_path()
@@ -92,8 +99,7 @@ impl AsRef<Path> for VirtualPath {
 
 impl From<PathBuf> for VirtualPath {
     fn from(p: PathBuf) -> Self {
-        let normalized = p.to_string_lossy().into_owned();
-        Self(normalized)
+        VirtualPath::new(p.to_string_lossy()).expect("PathBuf must convert to a valid VirtualPath")
     }
 }
 
