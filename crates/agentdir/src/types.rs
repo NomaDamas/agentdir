@@ -166,6 +166,16 @@ pub enum MappingDirection {
     VirtualToSource,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MaterializeStrategy {
+    #[default]
+    Reflink,
+    Symlink,
+    Hardlink,
+    Virtual,
+}
+
 /// Type of a filesystem entry.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EntryType {
@@ -230,9 +240,9 @@ pub struct Manifest {
     pub created_at_epoch_secs: u64,
     /// Last update timestamp (seconds since Unix epoch).
     pub updated_at_epoch_secs: u64,
-    /// Registered source roots.
+    #[serde(default)]
+    pub strategy: MaterializeStrategy,
     pub source_roots: Vec<SourceRoot>,
-    /// All catalog entries.
     pub entries: Vec<CatalogEntry>,
 }
 
@@ -247,6 +257,7 @@ impl Manifest {
             version: 1,
             created_at_epoch_secs: now,
             updated_at_epoch_secs: now,
+            strategy: MaterializeStrategy::default(),
             source_roots: Vec::new(),
             entries: Vec::new(),
         }

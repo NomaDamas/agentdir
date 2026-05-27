@@ -5,7 +5,7 @@ use clap::{Parser, Subcommand};
 use tracing_subscriber::EnvFilter;
 
 use agentdir::error::AgentdirError;
-use agentdir::types::{MappingDirection, SourcePath, VirtualPath};
+use agentdir::types::{MappingDirection, MaterializeStrategy, SourcePath, VirtualPath};
 use agentdir::workspace::Workspace;
 
 #[derive(Parser)]
@@ -29,6 +29,9 @@ enum Commands {
     Init {
         /// Path to create the workspace at
         path: PathBuf,
+        /// Materialization strategy: reflink, symlink, hardlink, or virtual
+        #[arg(long, default_value = "reflink", value_parser = parse_strategy)]
+        strategy: String,
     },
     /// Map a source directory into the virtual tree
     Map {
@@ -109,6 +112,24 @@ enum Commands {
     },
 }
 
+fn parse_strategy(s: &str) -> std::result::Result<String, String> {
+    match s {
+        "reflink" | "symlink" | "hardlink" | "virtual" => Ok(s.to_string()),
+        other => Err(format!(
+            "unknown strategy '{other}'; expected reflink, symlink, hardlink, or virtual"
+        )),
+    }
+}
+
+fn strategy_from_str(s: &str) -> MaterializeStrategy {
+    match s {
+        "symlink" => MaterializeStrategy::Symlink,
+        "hardlink" => MaterializeStrategy::Hardlink,
+        "virtual" => MaterializeStrategy::Virtual,
+        _ => MaterializeStrategy::Reflink,
+    }
+}
+
 fn validate_format(s: &str) -> std::result::Result<String, String> {
     match s {
         "json" => Ok(s.to_string()),
@@ -142,9 +163,10 @@ async fn main() {
 
 async fn run(command: Commands, workspace_root: PathBuf) -> agentdir::error::Result<()> {
     match command {
-        Commands::Init { path } => {
-            let ws = Workspace::init(path.clone())?;
-            println!("Initialized workspace at {}", path.display());
+        Commands::Init { path, strategy } => {
+            let strat = strategy_from_str(&strategy);
+            let ws = Workspace::init_with_strategy(path.clone(), strat)?;
+            println!("Initialized workspace at {} (strategy: {strategy})", path.display());
             println!("Manifest: {}", ws.manifest_path.display());
             Ok(())
         }
@@ -156,8 +178,9 @@ async fn run(command: Commands, workspace_root: PathBuf) -> agentdir::error::Res
 
             let summary = ws.map(source_path, mount_path).await?;
             println!(
-                "Mapped: {} entries added ({} reflinked, {} copied, {} dirs)",
-                summary.entries_added, summary.reflinked, summary.copied, summary.dirs_created
+                "Mapped: {} entries added ({} reflinked, {} copied, {} symlinked, {} hardlinked, {} dirs)",
+                summary.entries_added, summary.reflinked, summary.copied,
+                summary.symlinked, summary.hardlinked, summary.dirs_created
             );
             if summary.errors > 0 {
                 eprintln!("Warning: {} entries failed to materialize", summary.errors);
@@ -188,8 +211,9 @@ async fn run(command: Commands, workspace_root: PathBuf) -> agentdir::error::Res
 
             let summary = ws.map_batch(mappings).await?;
             println!(
-                "Batch mapped: {} entries ({} reflinked, {} copied, {} dirs)",
-                summary.entries_added, summary.reflinked, summary.copied, summary.dirs_created
+                "Batch mapped: {} entries ({} reflinked, {} copied, {} symlinked, {} hardlinked, {} dirs)",
+                summary.entries_added, summary.reflinked, summary.copied,
+                summary.symlinked, summary.hardlinked, summary.dirs_created
             );
             if !summary.errors.is_empty() {
                 eprintln!("Warning: {} entries failed", summary.errors.len());

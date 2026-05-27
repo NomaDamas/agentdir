@@ -27,18 +27,20 @@ use crate::manifest;
 use crate::materializer::Materializer;
 use crate::reconciler::{ReconcileSummary, Reconciler};
 use crate::types::{
-    CatalogEntry, EntryType, MappingDirection, SourcePath, SourceRoot, VirtualPath, VirtualStat,
+    CatalogEntry, EntryType, MappingDirection, MaterializeStrategy, SourcePath, SourceRoot,
+    VirtualPath, VirtualStat,
 };
 
 /// Shared workspace handle for concurrent async consumers.
 pub type SharedWorkspace = Arc<RwLock<Workspace>>;
 
-/// Summary of a map operation.
 #[derive(Debug, Default)]
 pub struct MapSummary {
     pub entries_added: usize,
     pub reflinked: usize,
     pub copied: usize,
+    pub symlinked: usize,
+    pub hardlinked: usize,
     pub dirs_created: usize,
     pub errors: usize,
 }
@@ -48,6 +50,8 @@ pub struct BatchMapSummary {
     pub entries_added: usize,
     pub reflinked: usize,
     pub copied: usize,
+    pub symlinked: usize,
+    pub hardlinked: usize,
     pub dirs_created: usize,
     pub errors: Vec<(String, String)>,
 }
@@ -76,14 +80,19 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    /// Initialize a new workspace at the given root directory.
-    ///
-    /// Creates `.agentdir/manifest.json` and an empty catalog.
     pub fn init(workspace_root: PathBuf) -> Result<Self> {
+        Self::init_with_strategy(workspace_root, MaterializeStrategy::default())
+    }
+
+    pub fn init_with_strategy(
+        workspace_root: PathBuf,
+        strategy: MaterializeStrategy,
+    ) -> Result<Self> {
         manifest::ensure_workspace_dir(&workspace_root)?;
 
-        let catalog = Catalog::new(workspace_root.clone());
-        let materializer = Materializer::new(workspace_root.clone())?;
+        let mut catalog = Catalog::new(workspace_root.clone());
+        catalog.manifest.strategy = strategy;
+        let materializer = Materializer::with_strategy(workspace_root.clone(), strategy)?;
         let backend: Arc<dyn Backend> = Arc::new(LocalBackend);
         let manifest_path = manifest::manifest_path(&workspace_root);
 
@@ -97,14 +106,14 @@ impl Workspace {
         })
     }
 
-    /// Open an existing workspace from disk.
     pub fn open(workspace_root: PathBuf) -> Result<Self> {
         let manifest_path = manifest::manifest_path(&workspace_root);
         let loaded_manifest = manifest::load(&manifest_path)?;
+        let strategy = loaded_manifest.strategy;
 
         Ok(Self {
             catalog: Catalog::from_manifest(loaded_manifest, workspace_root.clone()),
-            materializer: Materializer::new(workspace_root)?,
+            materializer: Materializer::with_strategy(workspace_root, strategy)?,
             backend: Arc::new(LocalBackend),
             manifest_path,
         })
@@ -165,6 +174,8 @@ impl Workspace {
             entries_added,
             reflinked: batch_result.reflinked,
             copied: batch_result.copied,
+            symlinked: batch_result.symlinked,
+            hardlinked: batch_result.hardlinked,
             dirs_created: batch_result.dirs_created,
             errors: batch_result.failed,
         })
@@ -239,6 +250,8 @@ impl Workspace {
             entries_added: entries.len(),
             reflinked: batch_result.reflinked,
             copied: batch_result.copied,
+            symlinked: batch_result.symlinked,
+            hardlinked: batch_result.hardlinked,
             dirs_created: batch_result.dirs_created,
             errors: batch_result
                 .errors

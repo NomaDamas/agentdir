@@ -12,17 +12,16 @@ use tracing::info;
 
 use crate::error::{AgentdirError, Result};
 use crate::reflink::{self, CloneResult};
-use crate::types::{CatalogEntry, EntryType, VirtualPath};
+use crate::types::{CatalogEntry, EntryType, MaterializeStrategy, VirtualPath};
 
-/// Result of materializing a single entry.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MaterializeResult {
-    /// File was cloned using CoW reflink.
     Reflinked,
-    /// File was copied byte-by-byte.
     Copied(u64),
-    /// Directory was created.
     DirCreated,
+    Symlinked,
+    Hardlinked,
+    Virtual,
 }
 
 /// Summary of materializing multiple entries.
@@ -34,13 +33,14 @@ pub struct MaterializeSummary {
     pub errors: Vec<(VirtualPath, AgentdirError)>,
 }
 
-/// Result of a batch materialization operation.
 #[derive(Debug, Default)]
 pub struct BatchResult {
     pub succeeded: usize,
     pub failed: usize,
     pub reflinked: usize,
     pub copied: usize,
+    pub symlinked: usize,
+    pub hardlinked: usize,
     pub dirs_created: usize,
     pub errors: Vec<(VirtualPath, AgentdirError)>,
 }
@@ -59,21 +59,23 @@ impl ProgressReporter for LogProgressReporter {
     }
 }
 
-/// Manages the on-disk materialized tree.
 pub struct Materializer {
-    /// Root directory where virtual files are materialized.
     pub materialized_root: PathBuf,
+    pub strategy: MaterializeStrategy,
 }
 
 impl Materializer {
-    /// Create a new materializer. Creates the root directory if it doesn't exist.
     pub fn new(root: PathBuf) -> Result<Self> {
+        Self::with_strategy(root, MaterializeStrategy::default())
+    }
+
+    pub fn with_strategy(root: PathBuf, strategy: MaterializeStrategy) -> Result<Self> {
         if !root.exists() {
             fs::create_dir_all(&root)?;
         }
-
         Ok(Self {
             materialized_root: root,
+            strategy,
         })
     }
 
@@ -83,20 +85,64 @@ impl Materializer {
         self.materialized_root.join(rel)
     }
 
-    /// Materialize a single catalog entry.
     pub fn materialize_entry(&self, entry: &CatalogEntry) -> Result<MaterializeResult> {
+        if matches!(self.strategy, MaterializeStrategy::Virtual) {
+            return Ok(MaterializeResult::Virtual);
+        }
+
         let dst = self.materialized_path(&entry.virtual_path);
 
         match &entry.metadata.entry_type {
             EntryType::File => {
                 let src = entry.source_path.as_path();
-                let result = reflink::clone_file(src, &dst)?;
-                let materialize_result = match result {
-                    CloneResult::Reflinked => MaterializeResult::Reflinked,
-                    CloneResult::Copied(bytes) => MaterializeResult::Copied(bytes),
+                if let Some(parent) = dst.parent() {
+                    fs::create_dir_all(parent)?;
+                }
+                let result = match self.strategy {
+                    MaterializeStrategy::Symlink => {
+                        #[cfg(unix)]
+                        {
+                            std::os::unix::fs::symlink(src, &dst).map_err(|e| {
+                                AgentdirError::ReflinkFailed(format!(
+                                    "symlink {} -> {:?}: {e}",
+                                    src.display(),
+                                    dst
+                                ))
+                            })?;
+                        }
+                        #[cfg(windows)]
+                        {
+                            std::os::windows::fs::symlink_file(src, &dst).map_err(|e| {
+                                AgentdirError::ReflinkFailed(format!(
+                                    "symlink {} -> {:?}: {e}",
+                                    src.display(),
+                                    dst
+                                ))
+                            })?;
+                        }
+                        MaterializeResult::Symlinked
+                    }
+                    MaterializeStrategy::Hardlink => {
+                        fs::hard_link(src, &dst).map_err(|e| {
+                            AgentdirError::ReflinkFailed(format!(
+                                "hardlink {} -> {:?}: {e}",
+                                src.display(),
+                                dst
+                            ))
+                        })?;
+                        MaterializeResult::Hardlinked
+                    }
+                    MaterializeStrategy::Virtual => unreachable!(),
+                    MaterializeStrategy::Reflink => {
+                        let clone = reflink::clone_file(src, &dst)?;
+                        match clone {
+                            CloneResult::Reflinked => MaterializeResult::Reflinked,
+                            CloneResult::Copied(bytes) => MaterializeResult::Copied(bytes),
+                        }
+                    }
                 };
-                info!(?src, ?dst, "materialized file");
-                Ok(materialize_result)
+                info!(?src, ?dst, strategy = ?self.strategy, "materialized file");
+                Ok(result)
             }
             EntryType::Directory => {
                 fs::create_dir_all(&dst)?;
@@ -119,13 +165,21 @@ impl Materializer {
         Ok(())
     }
 
-    /// Refresh a materialized entry.
-    ///
-    /// File refreshes clone into a temporary sibling first, then rename over the
-    /// destination only after clone/copy succeeds. That preserves the previous
-    /// materialized file if the source read fails mid-refresh. Directories are
-    /// idempotently recreated.
     pub fn refresh_entry(&self, entry: &CatalogEntry) -> Result<MaterializeResult> {
+        if matches!(self.strategy, MaterializeStrategy::Virtual) {
+            return Ok(MaterializeResult::Virtual);
+        }
+
+        match self.strategy {
+            MaterializeStrategy::Symlink | MaterializeStrategy::Hardlink => {
+                self.dematerialize_entry(&entry.virtual_path)?;
+                self.materialize_entry(entry)
+            }
+            _ => self.refresh_entry_reflink(entry),
+        }
+    }
+
+    fn refresh_entry_reflink(&self, entry: &CatalogEntry) -> Result<MaterializeResult> {
         let dst = self.materialized_path(&entry.virtual_path);
 
         match &entry.metadata.entry_type {
@@ -203,6 +257,17 @@ impl Materializer {
                     result.succeeded += 1;
                     result.dirs_created += 1;
                 }
+                Ok(MaterializeResult::Symlinked) => {
+                    result.succeeded += 1;
+                    result.symlinked += 1;
+                }
+                Ok(MaterializeResult::Hardlinked) => {
+                    result.succeeded += 1;
+                    result.hardlinked += 1;
+                }
+                Ok(MaterializeResult::Virtual) => {
+                    result.succeeded += 1;
+                }
                 Err(e) => {
                     result.failed += 1;
                     result.errors.push((entry.virtual_path.clone(), e));
@@ -266,6 +331,7 @@ impl Materializer {
                 Ok(MaterializeResult::Reflinked) => summary.reflinked += 1,
                 Ok(MaterializeResult::Copied(_)) => summary.copied += 1,
                 Ok(MaterializeResult::DirCreated) => summary.dirs_created += 1,
+                Ok(MaterializeResult::Symlinked | MaterializeResult::Hardlinked | MaterializeResult::Virtual) => {}
                 Err(error) => summary.errors.push((entry.virtual_path.clone(), error)),
             }
         }
