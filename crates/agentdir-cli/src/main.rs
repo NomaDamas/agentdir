@@ -4,7 +4,7 @@ use clap::{Parser, Subcommand};
 use tracing_subscriber::EnvFilter;
 
 use agentdir::error::AgentdirError;
-use agentdir::types::{SourcePath, VirtualPath};
+use agentdir::types::{MappingDirection, SourcePath, VirtualPath};
 use agentdir::workspace::Workspace;
 
 #[derive(Parser)]
@@ -72,12 +72,31 @@ enum Commands {
         #[arg(short, long)]
         recursive: bool,
     },
+    /// Export source→virtual path mapping as JSON (use --reverse for virtual→source)
+    ExportMapping {
+        /// Output format
+        #[arg(long, default_value = "json", value_parser = validate_format)]
+        format: String,
+        /// Reverse direction: emit virtual→source instead of source→virtual
+        #[arg(long)]
+        reverse: bool,
+        /// Make source paths relative to this base directory
+        #[arg(long)]
+        relative_to: Option<PathBuf>,
+    },
     /// Watch for source changes and auto-sync (runs in foreground)
     Watch {
         /// Polling interval in seconds
         #[arg(short, long, default_value = "60")]
         interval: u64,
     },
+}
+
+fn validate_format(s: &str) -> std::result::Result<String, String> {
+    match s {
+        "json" => Ok(s.to_string()),
+        other => Err(format!("unsupported format '{other}', only 'json' is supported")),
+    }
 }
 
 fn resolve_workspace(workspace_arg: Option<PathBuf>) -> PathBuf {
@@ -194,6 +213,24 @@ async fn run(command: Commands, workspace_root: PathBuf) -> agentdir::error::Res
             let vpath = VirtualPath::new(&path)?;
             ws.rmdir(&vpath, recursive)?;
             println!("Removed directory {path}");
+            Ok(())
+        }
+
+        Commands::ExportMapping {
+            format: _,
+            reverse,
+            relative_to,
+        } => {
+            let ws = Workspace::open(workspace_root)?;
+            let direction = if reverse {
+                MappingDirection::VirtualToSource
+            } else {
+                MappingDirection::SourceToVirtual
+            };
+            let mapping = ws.export_mapping(direction, relative_to.as_deref())?;
+            let json = serde_json::to_string_pretty(&mapping)
+                .map_err(|e| AgentdirError::ManifestWrite(e.to_string()))?;
+            println!("{json}");
             Ok(())
         }
 

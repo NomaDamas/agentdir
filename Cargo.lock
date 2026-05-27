@@ -28,6 +28,7 @@ version = "0.1.0"
 dependencies = [
  "agentdir",
  "clap",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",

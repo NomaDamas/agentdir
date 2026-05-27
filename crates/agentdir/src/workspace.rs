@@ -13,6 +13,7 @@
 //! `tokio::sync::RwLock` wrapper that serializes mutations while allowing
 //! read-side access through explicit read guards.
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -24,7 +25,7 @@ use crate::error::{AgentdirError, Result};
 use crate::manifest;
 use crate::materializer::Materializer;
 use crate::reconciler::{ReconcileSummary, Reconciler};
-use crate::types::{CatalogEntry, SourcePath, SourceRoot, VirtualPath};
+use crate::types::{CatalogEntry, EntryType, MappingDirection, SourcePath, SourceRoot, VirtualPath};
 
 /// Shared workspace handle for concurrent async consumers.
 pub type SharedWorkspace = Arc<RwLock<Workspace>>;
@@ -346,6 +347,61 @@ impl Workspace {
             materialized_root: self.materializer.materialized_root.clone(),
             last_updated_epoch_secs: self.catalog.manifest.updated_at_epoch_secs,
         }
+    }
+
+    pub fn export_mapping(
+        &self,
+        direction: MappingDirection,
+        relative_to: Option<&Path>,
+    ) -> Result<BTreeMap<String, String>> {
+        let canonical_base = match relative_to {
+            Some(base) => Some(base.canonicalize().map_err(|e| {
+                AgentdirError::InvalidPath(format!(
+                    "cannot canonicalize relative_to base {:?}: {e}",
+                    base
+                ))
+            })?),
+            None => None,
+        };
+
+        let mut map = BTreeMap::new();
+        for e in self.catalog.entries() {
+            if !matches!(e.metadata.entry_type, EntryType::File) {
+                continue;
+            }
+
+            let source_str = match &canonical_base {
+                Some(base) => e
+                    .source_path
+                    .as_path()
+                    .strip_prefix(base)
+                    .map_err(|_| {
+                        AgentdirError::InvalidPath(format!(
+                            "source path {} is not under base {:?}",
+                            e.source_path, base
+                        ))
+                    })?
+                    .to_string_lossy()
+                    .into_owned(),
+                None => e.source_path.as_path().to_string_lossy().into_owned(),
+            };
+            let virtual_str = e.virtual_path.as_str().to_string();
+
+            let (key, value) = match direction {
+                MappingDirection::SourceToVirtual => (source_str, virtual_str),
+                MappingDirection::VirtualToSource => (virtual_str, source_str),
+            };
+
+            if let Some(existing) = map.insert(key.clone(), value) {
+                if direction == MappingDirection::SourceToVirtual {
+                    return Err(AgentdirError::EntryExists(format!(
+                        "duplicate source path {key}: maps to both {existing} and the current entry"
+                    )));
+                }
+            }
+        }
+
+        Ok(map)
     }
 
     /// Save the manifest atomically.

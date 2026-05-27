@@ -157,6 +157,15 @@ impl fmt::Display for ContentHash {
     }
 }
 
+/// Direction for path mapping export.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MappingDirection {
+    /// Keys are source paths, values are virtual paths.
+    SourceToVirtual,
+    /// Keys are virtual paths, values are source paths.
+    VirtualToSource,
+}
+
 /// Type of a filesystem entry.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EntryType {
