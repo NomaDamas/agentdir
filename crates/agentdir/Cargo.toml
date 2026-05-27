@@ -21,3 +21,4 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 async-trait = { workspace = true }
 tokio-util = { workspace = true }
+globset = { workspace = true }

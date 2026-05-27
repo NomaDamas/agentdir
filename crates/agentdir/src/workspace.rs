@@ -17,6 +17,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use globset::GlobBuilder;
 use tokio::sync::RwLock;
 
 use crate::backend::{Backend, LocalBackend};
@@ -25,7 +26,9 @@ use crate::error::{AgentdirError, Result};
 use crate::manifest;
 use crate::materializer::Materializer;
 use crate::reconciler::{ReconcileSummary, Reconciler};
-use crate::types::{CatalogEntry, EntryType, MappingDirection, SourcePath, SourceRoot, VirtualPath};
+use crate::types::{
+    CatalogEntry, EntryType, MappingDirection, SourcePath, SourceRoot, VirtualPath, VirtualStat,
+};
 
 /// Shared workspace handle for concurrent async consumers.
 pub type SharedWorkspace = Arc<RwLock<Workspace>>;
@@ -347,6 +350,53 @@ impl Workspace {
             materialized_root: self.materializer.materialized_root.clone(),
             last_updated_epoch_secs: self.catalog.manifest.updated_at_epoch_secs,
         }
+    }
+
+    /// Return true if a virtual path exists in the catalog.
+    pub fn exists(&self, path: &VirtualPath) -> bool {
+        self.catalog.get(path).is_ok()
+    }
+
+    /// Return metadata for a virtual catalog entry.
+    pub fn stat(&self, path: &VirtualPath) -> Result<VirtualStat> {
+        let entry = self.catalog.get(path)?;
+        Ok(VirtualStat {
+            virtual_path: entry.virtual_path.clone(),
+            source_path: entry.source_path.clone(),
+            size_bytes: entry.metadata.size_bytes,
+            mtime_ns: entry.metadata.mtime_ns,
+            entry_type: entry.metadata.entry_type.clone(),
+            materialized: entry.materialized,
+        })
+    }
+
+    /// Read bytes from the source file behind a virtual path.
+    pub async fn read_bytes(&self, path: &VirtualPath) -> Result<Vec<u8>> {
+        let entry = self.catalog.get(path)?;
+        if !matches!(entry.metadata.entry_type, EntryType::File) {
+            return Err(AgentdirError::InvalidPath(format!(
+                "cannot read directory {path}"
+            )));
+        }
+
+        let source_path = self.catalog.resolve(path)?;
+        self.backend.read_bytes(source_path).await
+    }
+
+    /// Match catalog entries by virtual path using a glob pattern.
+    pub fn rglob(&self, pattern: &str) -> Result<Vec<&CatalogEntry>> {
+        let glob = GlobBuilder::new(pattern)
+            .literal_separator(true)
+            .build()
+            .map_err(|e| AgentdirError::InvalidPath(format!("invalid glob pattern: {e}")))?
+            .compile_matcher();
+
+        Ok(self
+            .catalog
+            .entries()
+            .iter()
+            .filter(|entry| glob.is_match(entry.virtual_path.as_str()))
+            .collect())
     }
 
     pub fn export_mapping(

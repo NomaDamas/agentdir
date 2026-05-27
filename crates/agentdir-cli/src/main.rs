@@ -1,3 +1,4 @@
+use std::io::Write;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
@@ -43,6 +44,16 @@ enum Commands {
     },
     /// Show workspace status
     Status,
+    /// Show metadata for a virtual path
+    Stat {
+        /// Virtual path to inspect
+        path: String,
+    },
+    /// Print file contents from source via virtual path
+    Cat {
+        /// Virtual path to read
+        path: String,
+    },
     /// Detect and apply source changes
     Refresh,
     /// Move an entry in the virtual namespace
@@ -166,6 +177,27 @@ async fn run(command: Commands, workspace_root: PathBuf) -> agentdir::error::Res
                 "Last updated: {} (epoch secs)",
                 status.last_updated_epoch_secs
             );
+            Ok(())
+        }
+
+        Commands::Stat { path } => {
+            let ws = Workspace::open(workspace_root)?;
+            let vpath = VirtualPath::new(&path)?;
+            let stat = ws.stat(&vpath)?;
+            println!("Path: {}", stat.virtual_path);
+            println!("Source: {}", stat.source_path);
+            println!("Size: {} bytes", stat.size_bytes);
+            println!("Mtime: {} ns", stat.mtime_ns);
+            println!("Type: {:?}", stat.entry_type);
+            println!("Materialized: {}", stat.materialized);
+            Ok(())
+        }
+
+        Commands::Cat { path } => {
+            let ws = Workspace::open(workspace_root)?;
+            let vpath = VirtualPath::new(&path)?;
+            let bytes = ws.read_bytes(&vpath).await?;
+            std::io::stdout().write_all(&bytes)?;
             Ok(())
         }
 

@@ -199,6 +199,17 @@ pub struct CatalogEntry {
     pub materialized: bool,
 }
 
+/// Metadata for a virtual catalog entry.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VirtualStat {
+    pub virtual_path: VirtualPath,
+    pub source_path: SourcePath,
+    pub size_bytes: u64,
+    pub mtime_ns: u128,
+    pub entry_type: EntryType,
+    pub materialized: bool,
+}
+
 /// A source root mapping.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SourceRoot {
