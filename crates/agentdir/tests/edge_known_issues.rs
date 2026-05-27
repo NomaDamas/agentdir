@@ -1,4 +1,6 @@
-//! Known issue regression tests. All tests are #[ignore] — they document bugs or underspecified behaviors that should be fixed. Run with: cargo test -- --ignored
+//! Regression tests for previously known issues (GitHub issues #5–#10 and related edge cases).
+//! These tests were originally #[ignore] and documented bugs. Now that the bugs are fixed,
+//! they run as normal regression tests to prevent regressions.
 
 use agentdir::error::AgentdirError;
 use agentdir::types::{SourcePath, VirtualPath};
@@ -6,26 +8,17 @@ use agentdir::workspace::Workspace;
 use std::path::PathBuf;
 use tempfile::TempDir;
 
-#[tokio::test]
-#[ignore = "known issue: From<PathBuf> bypasses VirtualPath validation"]
-async fn test_virtual_path_from_pathbuf_bypasses_validation() {
-    // This documents that the From<PathBuf> impl does not reuse VirtualPath::new validation.
-    // SHOULD: converting an empty PathBuf should reject the path just like VirtualPath::new("").
-    // ACTUALLY: From<PathBuf> constructs VirtualPath("") directly, leaving an invalid empty path.
-    let path = VirtualPath::from(PathBuf::from(""));
-
-    assert!(
-        !path.as_str().is_empty(),
-        "VirtualPath::from(PathBuf::from(\"\")) should not produce an empty virtual path"
-    );
+#[test]
+#[should_panic(expected = "PathBuf must convert to a valid VirtualPath")]
+fn test_virtual_path_from_pathbuf_rejects_empty() {
+    // Fixed: From<PathBuf> now delegates to VirtualPath::new(), which rejects empty paths.
+    // An empty PathBuf triggers a panic via .expect() — this is the correct behavior
+    // since From<T> cannot return Result.
+    let _path = VirtualPath::from(PathBuf::from(""));
 }
 
 #[tokio::test]
-#[ignore = "known issue: mv only moves single entry, not subtree"]
-async fn test_mv_directory_does_not_move_children() {
-    // This documents directory mv semantics for mapped subtrees.
-    // SHOULD: moving /mount/parent to /target/parent should move every child catalog entry too.
-    // ACTUALLY: only the directory entry is moved; child entries remain under the old prefix.
+async fn test_mv_directory_moves_children() {
     let src = TempDir::new().unwrap();
     let ws_dir = TempDir::new().unwrap();
 
@@ -56,11 +49,7 @@ async fn test_mv_directory_does_not_move_children() {
 }
 
 #[tokio::test]
-#[ignore = "known issue: cp only copies single entry, not subtree"]
-async fn test_cp_directory_does_not_copy_children() {
-    // This documents directory cp semantics for mapped subtrees.
-    // SHOULD: copying /mount/dir to /copy/dir should copy every child catalog entry too.
-    // ACTUALLY: only the directory entry is copied; child entries are not added under /copy/dir.
+async fn test_cp_directory_copies_children() {
     let src = TempDir::new().unwrap();
     let ws_dir = TempDir::new().unwrap();
 
@@ -91,11 +80,7 @@ async fn test_cp_directory_does_not_copy_children() {
 }
 
 #[tokio::test]
-#[ignore = "known issue: apply_remove uses unmap which may remove sibling entries"]
-async fn test_apply_remove_uses_unmap_removes_siblings() {
-    // This documents refresh removal boundary behavior for paths with shared string prefixes.
-    // SHOULD: deleting source readme should remove only /mount/readme and keep /mount/readme.backup.
-    // ACTUALLY: an overly broad prefix-based unmap would remove siblings; current child_prefix logic may pass.
+async fn test_remove_does_not_affect_siblings() {
     let src = TempDir::new().unwrap();
     let ws_dir = TempDir::new().unwrap();
 
@@ -122,11 +107,7 @@ async fn test_apply_remove_uses_unmap_removes_siblings() {
 }
 
 #[tokio::test]
-#[ignore = "known issue: recursive rmdir does not clean up materialized files"]
-async fn test_rmdir_without_dematerialization() {
-    // This documents recursive rmdir materialization cleanup behavior.
-    // SHOULD: rmdir recursive=true should remove catalog entries and all materialized child files from disk.
-    // ACTUALLY: catalog.rmdir removes child entries without individually dematerializing them; directory cleanup may mask this.
+async fn test_rmdir_recursive_dematerializes_children() {
     let src = TempDir::new().unwrap();
     let ws_dir = TempDir::new().unwrap();
 
@@ -161,11 +142,7 @@ async fn test_rmdir_without_dematerialization() {
 }
 
 #[tokio::test]
-#[ignore = "known issue: duplicate source root registration allowed"]
-async fn test_map_same_source_twice_different_mounts() {
-    // This documents duplicate source-root registration for one real source directory.
-    // SHOULD: mapping the same source twice should be rejected or represented in a deduplicated, explicit way.
-    // ACTUALLY: source_roots can contain the same source path twice, so refresh scans the same tree repeatedly.
+async fn test_map_same_source_twice_rejected() {
     let src = TempDir::new().unwrap();
     let ws_dir = TempDir::new().unwrap();
 
@@ -192,11 +169,7 @@ async fn test_map_same_source_twice_different_mounts() {
 }
 
 #[tokio::test]
-#[ignore = "known issue: relative virtual paths not explicitly rejected by map"]
-async fn test_relative_virtual_path_in_map() {
-    // This documents mount-point handling for relative virtual paths.
-    // SHOULD: map should reject a relative mount path, or the API should clearly normalize it consistently.
-    // ACTUALLY: relative mounts create catalog and materialized paths like "relative/file.txt" without a leading slash.
+async fn test_relative_virtual_path_in_map_rejected() {
     let src = TempDir::new().unwrap();
     let ws_dir = TempDir::new().unwrap();
 
@@ -217,11 +190,7 @@ async fn test_relative_virtual_path_in_map() {
 }
 
 #[tokio::test]
-#[ignore = "known issue: rename does not reject names containing path separators"]
-async fn test_rename_with_slash_in_new_name() {
-    // This documents that rename accepts a path-like new_name.
-    // SHOULD: rename should reject new names containing '/' because rename changes only the final component.
-    // ACTUALLY: rename builds /mount/sub/file.txt, effectively moving into a subpath that may not exist in the catalog.
+async fn test_rename_with_slash_in_new_name_rejected() {
     let src = TempDir::new().unwrap();
     let ws_dir = TempDir::new().unwrap();
 
