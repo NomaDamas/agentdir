@@ -5,6 +5,7 @@ pub mod manifest;
 pub mod materializer;
 pub mod reconciler;
 pub mod reflink;
+pub mod snapshot;
 pub mod types;
 pub mod watcher;
 pub mod workspace;
