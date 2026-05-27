@@ -37,6 +37,12 @@ enum Commands {
         /// Virtual mount point (e.g., /docs)
         mount: String,
     },
+    /// Apply a batch path mapping from a JSON file
+    MapBatch {
+        /// Path to JSON file: {"source_path": "virtual_path", ...}
+        #[arg(long)]
+        from_json: PathBuf,
+    },
     /// Remove a source mapping from the virtual tree
     Unmap {
         /// Virtual mount point to remove
@@ -155,6 +161,38 @@ async fn run(command: Commands, workspace_root: PathBuf) -> agentdir::error::Res
             );
             if summary.errors > 0 {
                 eprintln!("Warning: {} entries failed to materialize", summary.errors);
+            }
+            Ok(())
+        }
+
+        Commands::MapBatch { from_json } => {
+            let mut ws = Workspace::open(workspace_root)?;
+            let json_content = std::fs::read_to_string(&from_json).map_err(AgentdirError::Io)?;
+            let raw: std::collections::BTreeMap<String, String> =
+                serde_json::from_str(&json_content)
+                    .map_err(|e| AgentdirError::ManifestParse(e.to_string()))?;
+
+            let mappings: Vec<(SourcePath, VirtualPath)> = raw
+                .into_iter()
+                .map(|(src, virt)| {
+                    let sp = std::path::Path::new(&src)
+                        .canonicalize()
+                        .map(SourcePath::new)
+                        .map_err(|e| {
+                            AgentdirError::EntryNotFound(format!("source {src}: {e}"))
+                        })?;
+                    let vp = VirtualPath::new(&virt)?;
+                    Ok((sp, vp))
+                })
+                .collect::<agentdir::error::Result<_>>()?;
+
+            let summary = ws.map_batch(mappings).await?;
+            println!(
+                "Batch mapped: {} entries ({} reflinked, {} copied, {} dirs)",
+                summary.entries_added, summary.reflinked, summary.copied, summary.dirs_created
+            );
+            if !summary.errors.is_empty() {
+                eprintln!("Warning: {} entries failed", summary.errors.len());
             }
             Ok(())
         }

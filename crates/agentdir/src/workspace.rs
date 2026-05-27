@@ -43,6 +43,15 @@ pub struct MapSummary {
     pub errors: usize,
 }
 
+#[derive(Debug, Default)]
+pub struct BatchMapSummary {
+    pub entries_added: usize,
+    pub reflinked: usize,
+    pub copied: usize,
+    pub dirs_created: usize,
+    pub errors: Vec<(String, String)>,
+}
+
 /// Summary of an unmap operation.
 #[derive(Debug, Default)]
 pub struct UnmapSummary {
@@ -158,6 +167,84 @@ impl Workspace {
             copied: batch_result.copied,
             dirs_created: batch_result.dirs_created,
             errors: batch_result.failed,
+        })
+    }
+
+    pub async fn map_batch(
+        &mut self,
+        mappings: Vec<(SourcePath, VirtualPath)>,
+    ) -> Result<BatchMapSummary> {
+        if mappings.is_empty() {
+            return Ok(BatchMapSummary::default());
+        }
+
+        let mut seen_virtual = std::collections::HashSet::new();
+        for (_, vp) in &mappings {
+            validate_absolute_virtual_path(vp, "batch virtual path")?;
+            if !seen_virtual.insert(vp.as_str().to_string()) {
+                return Err(AgentdirError::EntryExists(format!(
+                    "duplicate virtual path in batch: {}",
+                    vp
+                )));
+            }
+            if self.catalog.get(vp).is_ok() {
+                return Err(AgentdirError::EntryExists(format!(
+                    "virtual path already exists: {}",
+                    vp
+                )));
+            }
+        }
+
+        let mut entries = Vec::with_capacity(mappings.len());
+        for (sp, vp) in &mappings {
+            let metadata = self.backend.metadata(sp).await.map_err(|e| {
+                AgentdirError::EntryNotFound(format!("source {}: {}", sp, e))
+            })?;
+            if matches!(metadata.entry_type, EntryType::Directory) {
+                return Err(AgentdirError::InvalidPath(format!(
+                    "batch map only accepts files, not directories: {}",
+                    sp
+                )));
+            }
+            entries.push(CatalogEntry {
+                virtual_path: vp.clone(),
+                source_path: sp.clone(),
+                content_hash: None,
+                metadata,
+                materialized: false,
+            });
+        }
+
+        self.catalog.add_entries(entries.clone())?;
+
+        let batch_result = self.materializer.materialize_batch(&entries, None, 50)?;
+
+        let failed_paths: std::collections::HashSet<_> = batch_result
+            .errors
+            .iter()
+            .map(|(vp, _)| vp.as_str().to_string())
+            .collect();
+
+        for entry in &entries {
+            if !failed_paths.contains(entry.virtual_path.as_str()) {
+                if let Ok(catalog_entry) = self.catalog.get_mut(&entry.virtual_path) {
+                    catalog_entry.materialized = true;
+                }
+            }
+        }
+
+        self.save()?;
+
+        Ok(BatchMapSummary {
+            entries_added: entries.len(),
+            reflinked: batch_result.reflinked,
+            copied: batch_result.copied,
+            dirs_created: batch_result.dirs_created,
+            errors: batch_result
+                .errors
+                .into_iter()
+                .map(|(vp, e)| (vp.as_str().to_string(), e.to_string()))
+                .collect(),
         })
     }
 
