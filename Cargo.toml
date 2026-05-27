@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/agentdir", "crates/agentdir-cli"]
+members = ["crates/agentdir", "crates/agentdir-cli", "crates/agentdir-python"]
 resolver = "2"
 
 [workspace.dependencies]
@@ -19,3 +19,4 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 async-trait = "0.1"
 tokio-util = { version = "0.7", features = ["rt"] }
 globset = "0.4"
+pyo3 = { version = "0.23", features = ["extension-module"] }
