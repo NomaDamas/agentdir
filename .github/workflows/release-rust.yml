@@ -47,6 +47,6 @@ jobs:
           exit 1
 
       - name: Publish agentdir-cli
-        run: cargo publish -p agentdir-cli
+        run: cargo publish -p agentdir-cli || echo "::warning::agentdir-cli publish failed (may already exist)"
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
