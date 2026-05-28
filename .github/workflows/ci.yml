@@ -93,7 +93,10 @@ jobs:
       - name: Test (ava)
         working-directory: bindings/node
         run: |
-          npm test 2>&1 | tee test-output.txt; EXIT=${PIPESTATUS[0]}
+          set +e
+          npm test > test-output.txt 2>&1
+          EXIT=$?
+          cat test-output.txt
           if grep -q "tests passed" test-output.txt && ! grep -q "tests failed" test-output.txt; then
             echo "All tests passed (exit code $EXIT may be from NAPI cleanup signal)"
             exit 0
