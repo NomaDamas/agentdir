@@ -24,7 +24,7 @@
   "scripts": {
     "build": "napi build --platform --release --manifest-path=Cargo.toml",
     "build:debug": "napi build --platform --manifest-path=Cargo.toml",
-    "test": "ava",
+    "test": "ava --force-exit",
     "lint": "oxlint .",
     "artifacts": "napi artifacts",
     "prepublishOnly": "napi prepublish -t npm",

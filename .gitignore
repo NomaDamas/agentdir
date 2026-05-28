@@ -20,8 +20,6 @@ build/
 node_modules/
 npm/
 *.node
-bindings/node/index.js
-bindings/node/index.d.ts
 
 # OS
 .DS_Store
