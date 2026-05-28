@@ -2,6 +2,9 @@
 name = "agentdir-cli"
 version = "0.1.0"
 edition = "2021"
+description = "CLI for agentdir — virtual filesystem for agent-optimized file exploration"
+license = "MIT"
+repository = "https://github.com/NomaDamas/agentdir"
 
 [[bin]]
 name = "agentdir"
