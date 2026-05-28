@@ -1,0 +1,10 @@
+src/
+Cargo.toml
+build.rs
+.cargo/
+__test__/
+target/
+npm/
+*.node
+!index.js
+!index.d.ts

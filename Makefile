@@ -1,5 +1,6 @@
 .PHONY: build test lint fmt clippy check clean doc release
 .PHONY: python-build python-test python-lint python-fmt
+.PHONY: node-build node-test node-lint
 .PHONY: docker-build docker-test cross-install cross-build cross-test ci
 
 # PyO3 0.23 caps at Python 3.13; set this so builds succeed with newer interpreters.
@@ -72,5 +73,15 @@ python-lint:
 python-fmt:
 	cd bindings/python && uv run ruff format .
 
+# === Node targets ===
+node-build:
+	cd bindings/node && npm run build
+
+node-test:
+	cd bindings/node && npm run build:debug && npm test
+
+node-lint:
+	cd bindings/node && npm run lint
+
 # === Full CI-equivalent ===
-ci: fmt clippy test doc python-lint python-test
+ci: fmt clippy test doc python-lint python-test node-lint node-test

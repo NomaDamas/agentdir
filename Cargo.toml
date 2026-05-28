@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/*", "bindings/python"]
+members = ["crates/*", "bindings/python", "bindings/node"]
 resolver = "2"
 
 [workspace.dependencies]
@@ -20,3 +20,6 @@ async-trait = "0.1"
 tokio-util = { version = "0.7", features = ["rt"] }
 globset = "0.4"
 pyo3 = { version = "0.23", features = ["extension-module", "abi3-py39"] }
+napi = { version = "3", default-features = false, features = ["napi6", "async", "serde-json"] }
+napi-derive = { version = "3", default-features = false, features = ["type-def"] }
+napi-build = "2"

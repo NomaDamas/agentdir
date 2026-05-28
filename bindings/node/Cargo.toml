@@ -1,0 +1,17 @@
+[package]
+name = "agentdir-node"
+version = "0.1.1"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+agentdir = { path = "../../crates/agentdir" }
+napi = { workspace = true }
+napi-derive = { workspace = true }
+tokio = { workspace = true }
+
+[build-dependencies]
+napi-build = { workspace = true }
+

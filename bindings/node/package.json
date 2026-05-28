@@ -1,0 +1,54 @@
+{
+  "name": "agentdir",
+  "version": "0.1.1",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "binaryName": "agentdir",
+    "targets": [
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin",
+      "x86_64-pc-windows-msvc",
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl"
+    ]
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">= 18"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "scripts": {
+    "build": "napi build --platform --release --manifest-path=Cargo.toml",
+    "build:debug": "napi build --platform --manifest-path=Cargo.toml",
+    "test": "ava",
+    "lint": "oxlint .",
+    "artifacts": "napi artifacts",
+    "prepublishOnly": "napi prepublish -t npm",
+    "version": "napi version"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.2.0",
+    "ava": "^6.2.0",
+    "oxlint": "^0.16.0",
+    "@oxc-node/core": "^0.0.18"
+  },
+  "ava": {
+    "extensions": {
+      "ts": "module"
+    },
+    "timeout": "2m",
+    "workerThreads": false,
+    "nodeArguments": [
+      "--import",
+      "@oxc-node/core/register"
+    ]
+  },
+  "files": [
+    "index.d.ts",
+    "index.js"
+  ]
+}
