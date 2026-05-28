@@ -109,6 +109,7 @@ jobs:
 
       - name: Test
         working-directory: bindings/node
+        shell: bash
         run: |
           npm test 2>&1 | tee test-output.txt; EXIT=${PIPESTATUS[0]}
           if grep -q "tests passed" test-output.txt && ! grep -q "tests failed" test-output.txt; then
