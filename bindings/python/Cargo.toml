@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "agentdir_python"
+name = "_agentdir"
 crate-type = ["cdylib"]
 
 [dependencies]
-agentdir = { path = "../agentdir" }
+agentdir = { path = "../../crates/agentdir" }
 pyo3 = { workspace = true }
 tokio = { workspace = true }
 serde_json = { workspace = true }

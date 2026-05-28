@@ -331,7 +331,11 @@ impl Materializer {
                 Ok(MaterializeResult::Reflinked) => summary.reflinked += 1,
                 Ok(MaterializeResult::Copied(_)) => summary.copied += 1,
                 Ok(MaterializeResult::DirCreated) => summary.dirs_created += 1,
-                Ok(MaterializeResult::Symlinked | MaterializeResult::Hardlinked | MaterializeResult::Virtual) => {}
+                Ok(
+                    MaterializeResult::Symlinked
+                    | MaterializeResult::Hardlinked
+                    | MaterializeResult::Virtual,
+                ) => {}
                 Err(error) => summary.errors.push((entry.virtual_path.clone(), error)),
             }
         }

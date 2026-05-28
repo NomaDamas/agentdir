@@ -48,8 +48,7 @@ impl Workspace {
         let snapshot_manifest_path = snapshot_root.join("manifest.json");
         manifest::save(&snapshot_manifest, &snapshot_manifest_path)?;
 
-        let snapshot_catalog =
-            Catalog::from_manifest(snapshot_manifest, snapshot_root.clone());
+        let snapshot_catalog = Catalog::from_manifest(snapshot_manifest, snapshot_root.clone());
 
         let mat = Materializer::with_strategy(snapshot_root.clone(), MaterializeStrategy::Symlink)?;
 

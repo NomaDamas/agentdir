@@ -208,9 +208,11 @@ impl Workspace {
 
         let mut entries = Vec::with_capacity(mappings.len());
         for (sp, vp) in &mappings {
-            let metadata = self.backend.metadata(sp).await.map_err(|e| {
-                AgentdirError::EntryNotFound(format!("source {}: {}", sp, e))
-            })?;
+            let metadata = self
+                .backend
+                .metadata(sp)
+                .await
+                .map_err(|e| AgentdirError::EntryNotFound(format!("source {}: {}", sp, e)))?;
             if matches!(metadata.entry_type, EntryType::Directory) {
                 return Err(AgentdirError::InvalidPath(format!(
                     "batch map only accepts files, not directories: {}",

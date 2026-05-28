@@ -50,7 +50,9 @@ async fn test_exists_returns_true_for_directory() {
 #[tokio::test]
 async fn test_stat_returns_metadata_for_file() {
     let (src, _ws_dir, ws) = mapped_workspace().await;
-    let stat = ws.stat(&VirtualPath::new("/docs/root.txt").unwrap()).unwrap();
+    let stat = ws
+        .stat(&VirtualPath::new("/docs/root.txt").unwrap())
+        .unwrap();
     let canonical_src = src.path().canonicalize().unwrap();
 
     assert_eq!(stat.virtual_path.as_str(), "/docs/root.txt");

@@ -9,7 +9,7 @@ path = "src/main.rs"
 doc = false
 
 [dependencies]
-agentdir = { path = "../agentdir" }
+agentdir = { path = "../agentdir", version = "0.1.0" }
 clap = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }

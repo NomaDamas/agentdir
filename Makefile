@@ -1,5 +1,9 @@
 .PHONY: build test lint fmt clippy check clean doc release
+.PHONY: python-build python-test python-lint python-fmt
 .PHONY: docker-build docker-test cross-install cross-build cross-test ci
+
+# PyO3 0.23 caps at Python 3.13; set this so builds succeed with newer interpreters.
+export PYO3_USE_ABI3_FORWARD_COMPATIBILITY := 1
 
 # === Local targets ===
 build:
@@ -55,5 +59,18 @@ cross-test:
 	@echo "Running Windows tests via cross + Wine..."
 	cross test --workspace --target x86_64-pc-windows-gnu
 
+# === Python targets ===
+python-build:
+	cd bindings/python && uv run maturin develop
+
+python-test:
+	cd bindings/python && uv run pytest -v
+
+python-lint:
+	cd bindings/python && uv run ruff check . && uv run ruff format --check . && uv run deptry .
+
+python-fmt:
+	cd bindings/python && uv run ruff format .
+
 # === Full CI-equivalent ===
-ci: fmt clippy test doc
+ci: fmt clippy test doc python-lint python-test

@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/agentdir", "crates/agentdir-cli", "crates/agentdir-python"]
+members = ["crates/*", "bindings/python"]
 resolver = "2"
 
 [workspace.dependencies]

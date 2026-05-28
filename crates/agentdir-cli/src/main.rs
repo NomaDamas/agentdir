@@ -133,7 +133,9 @@ fn strategy_from_str(s: &str) -> MaterializeStrategy {
 fn validate_format(s: &str) -> std::result::Result<String, String> {
     match s {
         "json" => Ok(s.to_string()),
-        other => Err(format!("unsupported format '{other}', only 'json' is supported")),
+        other => Err(format!(
+            "unsupported format '{other}', only 'json' is supported"
+        )),
     }
 }
 
@@ -166,7 +168,10 @@ async fn run(command: Commands, workspace_root: PathBuf) -> agentdir::error::Res
         Commands::Init { path, strategy } => {
             let strat = strategy_from_str(&strategy);
             let ws = Workspace::init_with_strategy(path.clone(), strat)?;
-            println!("Initialized workspace at {} (strategy: {strategy})", path.display());
+            println!(
+                "Initialized workspace at {} (strategy: {strategy})",
+                path.display()
+            );
             println!("Manifest: {}", ws.manifest_path.display());
             Ok(())
         }
@@ -201,9 +206,7 @@ async fn run(command: Commands, workspace_root: PathBuf) -> agentdir::error::Res
                     let sp = std::path::Path::new(&src)
                         .canonicalize()
                         .map(SourcePath::new)
-                        .map_err(|e| {
-                            AgentdirError::EntryNotFound(format!("source {src}: {e}"))
-                        })?;
+                        .map_err(|e| AgentdirError::EntryNotFound(format!("source {src}: {e}")))?;
                     let vp = VirtualPath::new(&virt)?;
                     Ok((sp, vp))
                 })

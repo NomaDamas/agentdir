@@ -279,13 +279,12 @@ async fn test_new_file_auto_addition() {
 /// Test 8: Ripgrep compatibility (skipped if rg not installed)
 #[tokio::test]
 async fn test_ripgrep_compatibility() {
-    if std::process::Command::new("rg")
-        .arg("--version")
-        .output()
-        .is_err()
-    {
-        eprintln!("Skipping ripgrep test: rg not installed");
-        return;
+    match std::process::Command::new("rg").arg("--version").output() {
+        Ok(o) if o.status.success() => {}
+        _ => {
+            eprintln!("Skipping ripgrep test: rg not available");
+            return;
+        }
     }
 
     let src = TempDir::new().unwrap();

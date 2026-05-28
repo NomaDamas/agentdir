@@ -37,9 +37,10 @@ async fn test_snapshot_reads_base_files() {
     .unwrap();
 
     let snap = ws.snapshot("run_001").unwrap();
-    let content = std::fs::read(snap.materializer.materialized_path(
-        &VirtualPath::new("/docs/file1.txt").unwrap(),
-    ))
+    let content = std::fs::read(
+        snap.materializer
+            .materialized_path(&VirtualPath::new("/docs/file1.txt").unwrap()),
+    )
     .unwrap();
     assert_eq!(content, b"hello");
 }
@@ -55,11 +56,8 @@ async fn test_snapshot_write_is_local() {
     .unwrap();
 
     let mut snap = ws.snapshot("run_001").unwrap();
-    snap.write(
-        &VirtualPath::new("/output.txt").unwrap(),
-        b"agent output",
-    )
-    .unwrap();
+    snap.write(&VirtualPath::new("/output.txt").unwrap(), b"agent output")
+        .unwrap();
 
     let snap_file = snap
         .materializer
@@ -95,7 +93,10 @@ async fn test_snapshot_write_does_not_leak_to_base() {
     .unwrap();
     assert_eq!(snap_content, b"overwritten in snapshot");
 
-    assert_eq!(std::fs::read(src.path().join("file1.txt")).unwrap(), b"hello");
+    assert_eq!(
+        std::fs::read(src.path().join("file1.txt")).unwrap(),
+        b"hello"
+    );
 }
 
 #[tokio::test]

@@ -42,7 +42,8 @@ impl Workspace {
     #[pyo3(signature = (path, strategy="reflink"))]
     fn init(path: &str, strategy: &str) -> PyResult<Self> {
         let strat = parse_strategy(strategy)?;
-        let ws = RustWorkspace::init_with_strategy(PathBuf::from(path), strat).map_err(to_py_err)?;
+        let ws =
+            RustWorkspace::init_with_strategy(PathBuf::from(path), strat).map_err(to_py_err)?;
         Ok(Self { inner: ws })
     }
 
@@ -118,7 +119,10 @@ impl Workspace {
         Python::with_gil(|py| {
             let d = PyDict::new(py);
             d.set_item("virtual_path", s.virtual_path.as_str())?;
-            d.set_item("source_path", s.source_path.as_path().to_string_lossy().to_string())?;
+            d.set_item(
+                "source_path",
+                s.source_path.as_path().to_string_lossy().to_string(),
+            )?;
             d.set_item("size_bytes", s.size_bytes)?;
             d.set_item("mtime_ns", s.mtime_ns as u64)?;
             d.set_item("entry_type", format!("{:?}", s.entry_type))?;
@@ -152,18 +156,17 @@ impl Workspace {
             let d = PyDict::new(py);
             d.set_item("total_entries", s.total_entries)?;
             d.set_item("source_roots", s.source_roots)?;
-            d.set_item("materialized_root", s.materialized_root.to_string_lossy().to_string())?;
+            d.set_item(
+                "materialized_root",
+                s.materialized_root.to_string_lossy().to_string(),
+            )?;
             d.set_item("last_updated_epoch_secs", s.last_updated_epoch_secs)?;
             Ok(d.into())
         })
     }
 
     #[pyo3(signature = (reverse=false, relative_to=None))]
-    fn export_mapping(
-        &self,
-        reverse: bool,
-        relative_to: Option<&str>,
-    ) -> PyResult<PyObject> {
+    fn export_mapping(&self, reverse: bool, relative_to: Option<&str>) -> PyResult<PyObject> {
         let direction = if reverse {
             MappingDirection::VirtualToSource
         } else {
@@ -208,6 +211,14 @@ impl Workspace {
         })
     }
 
+    fn rglob(&self, pattern: &str) -> PyResult<Vec<String>> {
+        let entries = self.inner.rglob(pattern).map_err(to_py_err)?;
+        Ok(entries
+            .into_iter()
+            .map(|e| e.virtual_path.as_str().to_string())
+            .collect())
+    }
+
     fn list_snapshots(&self) -> PyResult<Vec<String>> {
         self.inner.list_snapshots().map_err(to_py_err)
     }
@@ -230,7 +241,7 @@ fn parse_strategy(s: &str) -> PyResult<MaterializeStrategy> {
 }
 
 #[pymodule]
-fn agentdir_python(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _agentdir(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Workspace>()?;
     Ok(())
 }

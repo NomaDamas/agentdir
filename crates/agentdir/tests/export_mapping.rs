@@ -275,7 +275,9 @@ async fn test_export_invalid_relative_to_errors() {
 
     let result = ws.export_mapping(
         MappingDirection::SourceToVirtual,
-        Some(std::path::Path::new("/nonexistent/path/that/does/not/exist")),
+        Some(std::path::Path::new(
+            "/nonexistent/path/that/does/not/exist",
+        )),
     );
     assert!(result.is_err());
 }

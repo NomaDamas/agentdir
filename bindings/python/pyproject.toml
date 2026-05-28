@@ -1,0 +1,48 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "agentdir"
+version = "0.1.0"
+description = "Python bindings for agentdir — virtual filesystem for agent-optimized file exploration"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0", "ruff>=0.8", "deptry>=0.22", "maturin>=1.0,<2.0"]
+
+[tool.maturin]
+python-source = "python"
+module-name = "agentdir._agentdir"
+manifest-path = "Cargo.toml"
+features = ["pyo3/extension-module"]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.deptry.per_rule_ignores]
+DEP003 = ["agentdir"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+strict = true
+markers = []

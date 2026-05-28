@@ -177,6 +177,22 @@ async fn test_symlink_in_source_is_skipped() {
 async fn test_source_becomes_unreadable_after_map() {
     use std::os::unix::fs::PermissionsExt;
 
+    // Root bypasses file permissions, so this test is meaningless when running as
+    // root (e.g., inside Docker containers). Detect by creating a 000 file and
+    // checking if we can still read it.
+    {
+        let probe = std::env::temp_dir().join("agentdir_root_probe");
+        std::fs::write(&probe, b"x").unwrap();
+        std::fs::set_permissions(&probe, std::fs::Permissions::from_mode(0o000)).unwrap();
+        let can_read = std::fs::read(&probe).is_ok();
+        std::fs::set_permissions(&probe, std::fs::Permissions::from_mode(0o644)).unwrap();
+        let _ = std::fs::remove_file(&probe);
+        if can_read {
+            eprintln!("SKIPPED: running as root (permissions not enforced)");
+            return;
+        }
+    }
+
     let src = TempDir::new().unwrap();
     let ws_dir = TempDir::new().unwrap();
 

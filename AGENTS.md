@@ -3,7 +3,7 @@
 ## What This Project Is
 
 Virtual filesystem for agent-optimized file exploration using CoW reflinks.
-Rust workspace with two crates: `agentdir` (library) and `agentdir-cli` (binary).
+Rust workspace with two crates (`agentdir`, `agentdir-cli`) and Python bindings (`bindings/python`).
 
 ## Project Scope
 
@@ -47,6 +47,18 @@ The following are explicitly **not goals** of this project:
 
 Commands: `init`, `map`, `unmap`, `status`, `refresh`, `mv`, `cp`, `mkdir`, `rmdir`, `watch`
 
+## Python Bindings (`bindings/python/`)
+
+PyO3 bindings exposing `Workspace` class with full API: `init`, `open`, `map`, `unmap`, `mv`, `cp`, `mkdir`, `rmdir`, `rename`, `exists`, `stat`, `read_bytes`, `refresh`, `status`, `export_mapping`, `map_batch`, `list_snapshots`, `destroy_snapshot`.
+
+| Path | Purpose |
+|------|---------|
+| `src/lib.rs` | PyO3 `#[pymodule]` — wraps `agentdir::Workspace` |
+| `python/agentdir/__init__.py` | Re-exports from native `_agentdir` module |
+| `python/agentdir/_agentdir.pyi` | PEP 561 type stubs |
+| `tests/` | 78 pytest tests covering all API methods |
+| `pyproject.toml` | maturin build, uv deps, ruff + pytest config |
+
 ## Cross-Platform Notes
 
 - **VirtualPath** always uses `/` internally on all platforms
@@ -63,7 +75,11 @@ Commands: `init`, `map`, `unmap`, `status`, `refresh`, `mv`, `cp`, `mkdir`, `rmd
 |---------|-------------|
 | `make test` | `cargo test --workspace` |
 | `make lint` | `cargo fmt --check` + `cargo clippy` |
-| `make ci` | fmt + clippy + test + doc |
+| `make ci` | fmt + clippy + test + doc + python-lint + python-test |
+| `make python-build` | `cd bindings/python && uv run maturin develop` |
+| `make python-test` | `cd bindings/python && uv run pytest -v` |
+| `make python-lint` | `cd bindings/python && uv run ruff check . && uv run ruff format --check . && uv run deptry .` |
+| `make python-fmt` | `cd bindings/python && uv run ruff format .` |
 | `make docker-test` | Full Linux test via Docker |
 | `make cross-build` | Windows cross-compilation check (compile-only) |
 | `make cross-test` | Windows runtime tests via `cross` + Wine |

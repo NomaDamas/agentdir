@@ -192,7 +192,11 @@ async fn test_legacy_manifest_defaults_to_reflink() {
     let json = std::fs::read_to_string(&manifest_path).unwrap();
     let mut value: serde_json::Value = serde_json::from_str(&json).unwrap();
     value.as_object_mut().unwrap().remove("strategy");
-    std::fs::write(&manifest_path, serde_json::to_string_pretty(&value).unwrap()).unwrap();
+    std::fs::write(
+        &manifest_path,
+        serde_json::to_string_pretty(&value).unwrap(),
+    )
+    .unwrap();
 
     let ws = Workspace::open(ws_dir.path().to_path_buf()).unwrap();
     assert_eq!(ws.catalog.manifest.strategy, MaterializeStrategy::Reflink);
