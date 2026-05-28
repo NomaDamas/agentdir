@@ -140,6 +140,18 @@ class Workspace:
         """
         ...
 
+    def refresh_with_hash_verification(self, verify_hashes: bool = False) -> dict[str, int]:
+        """Refresh with optional SHA-256 hash verification for unchanged files.
+
+        Args:
+            verify_hashes: If True, verify file content via SHA-256 even when
+                mtime/size are unchanged.
+
+        Returns:
+            Dict with keys: added, refreshed, removed, errors.
+        """
+        ...
+
     def list_snapshots(self) -> list[str]:
         """List all snapshot names."""
         ...
@@ -147,3 +159,25 @@ class Workspace:
     def destroy_snapshot(self, name: str) -> None:
         """Destroy a named snapshot."""
         ...
+
+    def snapshot(self, name: str) -> SnapshotWorkspace:
+        """Create a named snapshot (CoW fork) of the current workspace."""
+        ...
+
+    def open_snapshot(self, name: str) -> SnapshotWorkspace:
+        """Open an existing named snapshot."""
+        ...
+
+class SnapshotWorkspace:
+    """A snapshot (CoW fork) of a workspace with isolated read/write operations."""
+
+    def exists(self, path: str) -> bool: ...
+    def stat(self, path: str) -> dict[str, object]: ...
+    def read_bytes(self, path: str) -> bytes: ...
+    def write(self, path: str, content: bytes) -> None: ...
+    def export_mapping(
+        self,
+        reverse: bool = False,
+        relative_to: str | None = None,
+    ) -> dict[str, str]: ...
+    def destroy(self) -> None: ...

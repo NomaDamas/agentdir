@@ -9,6 +9,7 @@ use napi_derive::napi;
 use tokio::sync::Mutex;
 
 use agentdir::error::AgentdirError;
+use agentdir::snapshot::SnapshotWorkspace as RustSnapshotWorkspace;
 use agentdir::types::{
     MappingDirection, MaterializeStrategy, SourcePath, VirtualPath as RustVirtualPath,
 };
@@ -346,6 +347,30 @@ impl JsWorkspace {
             .collect())
     }
 
+    /// Refresh the workspace with optional SHA-256 hash verification.
+    ///
+    /// When `verifyHashes` is true, files whose mtime/size are unchanged
+    /// are additionally verified via SHA-256 to detect silent modifications.
+    ///
+    /// @param verifyHashes - Enable hash-based change detection.
+    #[napi]
+    pub async fn refresh_with_hash_verification(
+        &self,
+        verify_hashes: bool,
+    ) -> napi::Result<RefreshSummary> {
+        let mut ws = self.inner.lock().await;
+        let summary = ws
+            .refresh_with_hash_verification(verify_hashes)
+            .await
+            .map_err(to_napi_err)?;
+        Ok(RefreshSummary {
+            added: summary.added as u32,
+            refreshed: summary.refreshed as u32,
+            removed: summary.removed as u32,
+            errors: summary.errors.len() as u32,
+        })
+    }
+
     /// List all snapshot names.
     #[napi]
     pub async fn list_snapshots(&self) -> napi::Result<Vec<String>> {
@@ -358,5 +383,118 @@ impl JsWorkspace {
     pub async fn destroy_snapshot(&self, name: String) -> napi::Result<()> {
         let ws = self.inner.lock().await;
         ws.destroy_snapshot(&name).map_err(to_napi_err)
+    }
+
+    /// Create a named snapshot (CoW fork) of the current workspace.
+    ///
+    /// @param name - Snapshot name (used as subdirectory name).
+    /// @returns A SnapshotWorkspace handle for the new snapshot.
+    #[napi]
+    pub async fn snapshot(&self, name: String) -> napi::Result<JsSnapshotWorkspace> {
+        let ws = self.inner.lock().await;
+        let snap = ws.snapshot(&name).map_err(to_napi_err)?;
+        Ok(JsSnapshotWorkspace {
+            inner: Arc::new(Mutex::new(snap)),
+        })
+    }
+
+    /// Open an existing named snapshot.
+    ///
+    /// @param name - Snapshot name to open.
+    /// @returns A SnapshotWorkspace handle.
+    #[napi]
+    pub async fn open_snapshot(&self, name: String) -> napi::Result<JsSnapshotWorkspace> {
+        let ws = self.inner.lock().await;
+        let snap = ws.open_snapshot(&name).map_err(to_napi_err)?;
+        Ok(JsSnapshotWorkspace {
+            inner: Arc::new(Mutex::new(snap)),
+        })
+    }
+}
+
+/// A snapshot (CoW fork) of a workspace with isolated read/write operations.
+#[napi(js_name = "SnapshotWorkspace")]
+pub struct JsSnapshotWorkspace {
+    inner: Arc<Mutex<RustSnapshotWorkspace>>,
+}
+
+#[napi]
+impl JsSnapshotWorkspace {
+    /// Check whether a virtual path exists in this snapshot.
+    #[napi]
+    pub async fn exists(&self, path: String) -> napi::Result<bool> {
+        let vp = make_vp(&path)?;
+        let snap = self.inner.lock().await;
+        Ok(snap.exists(&vp))
+    }
+
+    /// Get metadata for a virtual path in this snapshot.
+    #[napi]
+    pub async fn stat(&self, path: String) -> napi::Result<StatResult> {
+        let vp = make_vp(&path)?;
+        let snap = self.inner.lock().await;
+        let entry = snap.stat(&vp).map_err(to_napi_err)?;
+        Ok(StatResult {
+            virtual_path: entry.virtual_path.as_str().to_string(),
+            source_path: entry.source_path.as_path().to_string_lossy().to_string(),
+            size_bytes: entry.metadata.size_bytes as i64,
+            mtime_ns: entry.metadata.mtime_ns as i64,
+            entry_type: format!("{:?}", entry.metadata.entry_type),
+            materialized: entry.materialized,
+        })
+    }
+
+    /// Read the raw bytes of a file at the given virtual path in this snapshot.
+    #[napi]
+    pub async fn read_bytes(&self, path: String) -> napi::Result<Buffer> {
+        let vp = make_vp(&path)?;
+        let snap = self.inner.lock().await;
+        let bytes = snap.read_bytes(&vp).await.map_err(to_napi_err)?;
+        Ok(bytes.into())
+    }
+
+    /// Write content to a file in this snapshot (copy-on-write).
+    ///
+    /// @param path - Virtual path to write to.
+    /// @param content - Raw bytes to write.
+    #[napi]
+    pub async fn write(&self, path: String, content: Buffer) -> napi::Result<()> {
+        let vp = make_vp(&path)?;
+        let mut snap = self.inner.lock().await;
+        snap.write(&vp, &content).map_err(to_napi_err)
+    }
+
+    /// Export the source-to-virtual (or reverse) path mapping for this snapshot.
+    #[napi]
+    pub async fn export_mapping(
+        &self,
+        reverse: Option<bool>,
+        relative_to: Option<String>,
+    ) -> napi::Result<HashMap<String, String>> {
+        let direction = if reverse.unwrap_or(false) {
+            MappingDirection::VirtualToSource
+        } else {
+            MappingDirection::SourceToVirtual
+        };
+        let base = relative_to.map(PathBuf::from);
+        let snap = self.inner.lock().await;
+        let mapping = snap
+            .export_mapping(direction, base.as_deref())
+            .map_err(to_napi_err)?;
+        Ok(mapping.into_iter().collect())
+    }
+
+    /// Destroy this snapshot, removing all its files from disk.
+    #[napi]
+    pub async fn destroy(&self) -> napi::Result<()> {
+        let snap = self.inner.lock().await;
+        let root = snap.snapshot_root.clone();
+        drop(snap);
+        std::fs::remove_dir_all(&root).map_err(|e| {
+            napi::Error::new(
+                napi::Status::GenericFailure,
+                format!("failed to destroy snapshot: {e}"),
+            )
+        })
     }
 }

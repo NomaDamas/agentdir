@@ -2,6 +2,7 @@
 name = "agentdir-node"
 version = "0.1.1"
 edition = "2021"
+publish = false
 
 [lib]
 crate-type = ["cdylib"]

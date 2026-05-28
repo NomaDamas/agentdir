@@ -2,7 +2,7 @@ import test, { type ExecutionContext } from 'ava'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { Workspace } from '../index.js'
+import { SnapshotWorkspace, Workspace } from '../index.js'
 
 function createTmpDir() {
   return realpathSync(mkdtempSync(join(tmpdir(), 'agentdir-test-')))
@@ -1044,5 +1044,264 @@ test('status: status materializedRoot is a string path', async (t) => {
     t.true(status.materializedRoot.length > 0)
   } finally {
     cleanDir(dir)
+  }
+})
+
+test('refresh with hash verification: unchanged workspace returns zeros', async (t) => {
+  const { dir, ws } = createWorkspace()
+  try {
+    const summary = await ws.refreshWithHashVerification(true)
+    t.is(summary.added, 0)
+    t.is(summary.refreshed, 0)
+    t.is(summary.removed, 0)
+    t.is(summary.errors, 0)
+  } finally {
+    cleanDir(dir)
+  }
+})
+
+test('refresh with hash verification: detects modified file', async (t) => {
+  const { dir, ws } = createWorkspace()
+  const source = createSourceDir()
+  try {
+    await ws.map(source, '/src')
+    writeFileSync(join(source, 'file1.txt'), 'hash-verified-change')
+    const summary = await ws.refreshWithHashVerification(true)
+    t.true(summary.refreshed >= 1)
+    t.is((await ws.readBytes('/src/file1.txt')).toString(), 'hash-verified-change')
+  } finally {
+    cleanDir(dir)
+    cleanDir(source)
+  }
+})
+
+test('refresh with hash verification: summary fields have correct types', async (t) => {
+  const { dir, ws } = createWorkspace()
+  try {
+    const summary = await ws.refreshWithHashVerification(false)
+    t.is(typeof summary.added, 'number')
+    t.is(typeof summary.refreshed, 'number')
+    t.is(typeof summary.removed, 'number')
+    t.is(typeof summary.errors, 'number')
+  } finally {
+    cleanDir(dir)
+  }
+})
+
+test('snapshots: create snapshot returns SnapshotWorkspace', async (t) => {
+  const { dir, ws } = createWorkspace()
+  const source = createSourceDir()
+  try {
+    await ws.map(source, '/src')
+    const snapshot = await ws.snapshot('mysnap')
+    t.truthy(snapshot)
+    t.true(snapshot instanceof SnapshotWorkspace)
+  } finally {
+    cleanDir(dir)
+    cleanDir(source)
+  }
+})
+
+test('snapshots: created snapshot can read files from base workspace', async (t) => {
+  const { dir, ws } = createWorkspace()
+  const source = createSourceDir()
+  try {
+    await ws.map(source, '/src')
+    const snapshot = await ws.snapshot('mysnap')
+    t.is((await snapshot.readBytes('/src/file1.txt')).toString(), 'hello')
+    t.true(await snapshot.exists('/src/subdir/nested.txt'))
+  } finally {
+    cleanDir(dir)
+    cleanDir(source)
+  }
+})
+
+test('snapshots: snapshot write creates isolated copy', async (t) => {
+  const { dir, ws } = createWorkspace()
+  const source = createSourceDir()
+  try {
+    await ws.map(source, '/src')
+    const snapshot = await ws.snapshot('mysnap')
+    await snapshot.write('/src/file1.txt', Buffer.from('snapshot hello'))
+    t.is((await snapshot.readBytes('/src/file1.txt')).toString(), 'snapshot hello')
+    t.is((await ws.readBytes('/src/file1.txt')).toString(), 'hello')
+  } finally {
+    cleanDir(dir)
+    cleanDir(source)
+  }
+})
+
+test('snapshots: snapshot appears in listSnapshots after creation', async (t) => {
+  const { dir, ws } = createWorkspace()
+  const source = createSourceDir()
+  try {
+    await ws.map(source, '/src')
+    await ws.snapshot('mysnap')
+    t.true((await ws.listSnapshots()).includes('mysnap'))
+  } finally {
+    cleanDir(dir)
+    cleanDir(source)
+  }
+})
+
+test('snapshots: creating duplicate snapshot name throws', async (t) => {
+  const { dir, ws } = createWorkspace()
+  const source = createSourceDir()
+  try {
+    await ws.map(source, '/src')
+    await ws.snapshot('mysnap')
+    await expectRejects(t, ws.snapshot('mysnap'))
+  } finally {
+    cleanDir(dir)
+    cleanDir(source)
+  }
+})
+
+test('snapshots: snapshot destroy removes it from disk', async (t) => {
+  const { dir, ws } = createWorkspace()
+  const source = createSourceDir()
+  try {
+    await ws.map(source, '/src')
+    const snapshot = await ws.snapshot('mysnap')
+    await snapshot.destroy()
+    t.false((await ws.listSnapshots()).includes('mysnap'))
+    t.false(existsSync(join(dir, 'snapshots', 'mysnap')))
+  } finally {
+    cleanDir(dir)
+    cleanDir(source)
+  }
+})
+
+test('snapshots: open existing snapshot returns SnapshotWorkspace', async (t) => {
+  const { dir, ws } = createWorkspace()
+  const source = createSourceDir()
+  try {
+    await ws.map(source, '/src')
+    await ws.snapshot('mysnap')
+    const snapshot = await ws.openSnapshot('mysnap')
+    t.truthy(snapshot)
+    t.true(snapshot instanceof SnapshotWorkspace)
+    t.is((await snapshot.readBytes('/src/file2.txt')).toString(), 'world')
+  } finally {
+    cleanDir(dir)
+    cleanDir(source)
+  }
+})
+
+test('snapshots: open non-existent snapshot throws', async (t) => {
+  const { dir, ws } = createWorkspace()
+  try {
+    await expectRejects(t, ws.openSnapshot('missing'))
+  } finally {
+    cleanDir(dir)
+  }
+})
+
+test('snapshots: opened snapshot can read and write independently', async (t) => {
+  const { dir, ws } = createWorkspace()
+  const source = createSourceDir()
+  try {
+    await ws.map(source, '/src')
+    await ws.snapshot('mysnap')
+    const snapshot = await ws.openSnapshot('mysnap')
+    await snapshot.write('/src/file2.txt', Buffer.from('snapshot world'))
+    t.is((await snapshot.readBytes('/src/file2.txt')).toString(), 'snapshot world')
+    t.is((await ws.readBytes('/src/file2.txt')).toString(), 'world')
+  } finally {
+    cleanDir(dir)
+    cleanDir(source)
+  }
+})
+
+test('snapshot workspace: exists returns correct boolean', async (t) => {
+  const { dir, ws } = createWorkspace()
+  const source = createSourceDir()
+  try {
+    await ws.map(source, '/src')
+    const snapshot = await ws.snapshot('mysnap')
+    t.true(await snapshot.exists('/src/file1.txt'))
+    t.false(await snapshot.exists('/src/missing.txt'))
+  } finally {
+    cleanDir(dir)
+    cleanDir(source)
+  }
+})
+
+test('snapshot workspace: stat returns expected fields', async (t) => {
+  const { dir, ws } = createWorkspace()
+  const source = createSourceDir()
+  try {
+    await ws.map(source, '/src')
+    const snapshot = await ws.snapshot('mysnap')
+    const stat = await snapshot.stat('/src/file1.txt')
+    t.is(stat.virtualPath, '/src/file1.txt')
+    t.true(stat.sourcePath.endsWith('file1.txt'))
+    t.is(stat.sizeBytes, 5)
+    t.true(typeof stat.mtimeNs === 'number')
+    t.true(typeof stat.entryType === 'string')
+    t.true(typeof stat.materialized === 'boolean')
+  } finally {
+    cleanDir(dir)
+    cleanDir(source)
+  }
+})
+
+test('snapshot workspace: readBytes returns correct content', async (t) => {
+  const { dir, ws } = createWorkspace()
+  const source = createSourceDir()
+  try {
+    await ws.map(source, '/src')
+    const snapshot = await ws.snapshot('mysnap')
+    t.is((await snapshot.readBytes('/src/subdir/nested.txt')).toString(), 'nested content')
+  } finally {
+    cleanDir(dir)
+    cleanDir(source)
+  }
+})
+
+test('snapshot workspace: write creates or overwrites file in snapshot', async (t) => {
+  const { dir, ws } = createWorkspace()
+  const source = createSourceDir()
+  try {
+    await ws.map(source, '/src')
+    const snapshot = await ws.snapshot('mysnap')
+    await snapshot.write('/src/file1.txt', Buffer.from('first snapshot value'))
+    await snapshot.write('/src/file1.txt', Buffer.from('second snapshot value'))
+    t.is((await snapshot.readBytes('/src/file1.txt')).toString(), 'second snapshot value')
+    t.is((await ws.readBytes('/src/file1.txt')).toString(), 'hello')
+  } finally {
+    cleanDir(dir)
+    cleanDir(source)
+  }
+})
+
+test('snapshot workspace: exportMapping returns mapping dict', async (t) => {
+  const { dir, ws } = createWorkspace()
+  const source = createSourceDir()
+  try {
+    await ws.map(source, '/src')
+    const snapshot = await ws.snapshot('mysnap')
+    const mapping = await snapshot.exportMapping()
+    t.true(mapping !== null)
+    t.is(typeof mapping, 'object')
+    t.is(mapping[join(source, 'file1.txt')], '/src/file1.txt')
+  } finally {
+    cleanDir(dir)
+    cleanDir(source)
+  }
+})
+
+test('snapshot workspace: destroy removes snapshot directory', async (t) => {
+  const { dir, ws } = createWorkspace()
+  const source = createSourceDir()
+  try {
+    await ws.map(source, '/src')
+    const snapshot = await ws.snapshot('mysnap')
+    await snapshot.destroy()
+    await expectRejects(t, ws.openSnapshot('mysnap'))
+    t.false(existsSync(join(dir, 'snapshots', 'mysnap')))
+  } finally {
+    cleanDir(dir)
+    cleanDir(source)
   }
 })

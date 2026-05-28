@@ -5,6 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use agentdir::error::AgentdirError;
+use agentdir::snapshot::SnapshotWorkspace as RustSnapshotWorkspace;
 use agentdir::types::{
     MappingDirection, MaterializeStrategy, SourcePath, VirtualPath as RustVirtualPath,
 };
@@ -219,12 +220,107 @@ impl Workspace {
             .collect())
     }
 
+    #[pyo3(signature = (verify_hashes=false))]
+    fn refresh_with_hash_verification(&mut self, verify_hashes: bool) -> PyResult<PyObject> {
+        let rt = make_runtime();
+        let summary = rt
+            .block_on(self.inner.refresh_with_hash_verification(verify_hashes))
+            .map_err(to_py_err)?;
+        Python::with_gil(|py| {
+            let d = PyDict::new(py);
+            d.set_item("added", summary.added)?;
+            d.set_item("refreshed", summary.refreshed)?;
+            d.set_item("removed", summary.removed)?;
+            d.set_item("errors", summary.errors.len())?;
+            Ok(d.into())
+        })
+    }
+
     fn list_snapshots(&self) -> PyResult<Vec<String>> {
         self.inner.list_snapshots().map_err(to_py_err)
     }
 
     fn destroy_snapshot(&self, name: &str) -> PyResult<()> {
         self.inner.destroy_snapshot(name).map_err(to_py_err)
+    }
+
+    fn snapshot(&self, name: &str) -> PyResult<PySnapshotWorkspace> {
+        let snap = self.inner.snapshot(name).map_err(to_py_err)?;
+        Ok(PySnapshotWorkspace { inner: snap })
+    }
+
+    fn open_snapshot(&self, name: &str) -> PyResult<PySnapshotWorkspace> {
+        let snap = self.inner.open_snapshot(name).map_err(to_py_err)?;
+        Ok(PySnapshotWorkspace { inner: snap })
+    }
+}
+
+#[pyclass(name = "SnapshotWorkspace")]
+pub struct PySnapshotWorkspace {
+    inner: RustSnapshotWorkspace,
+}
+
+#[pymethods]
+impl PySnapshotWorkspace {
+    fn exists(&self, path: &str) -> PyResult<bool> {
+        let vp = make_vp(path)?;
+        Ok(self.inner.exists(&vp))
+    }
+
+    fn stat(&self, path: &str) -> PyResult<PyObject> {
+        let vp = make_vp(path)?;
+        let entry = self.inner.stat(&vp).map_err(to_py_err)?;
+        Python::with_gil(|py| {
+            let d = PyDict::new(py);
+            d.set_item("virtual_path", entry.virtual_path.as_str())?;
+            d.set_item(
+                "source_path",
+                entry.source_path.as_path().to_string_lossy().to_string(),
+            )?;
+            d.set_item("size_bytes", entry.metadata.size_bytes)?;
+            d.set_item("mtime_ns", entry.metadata.mtime_ns as u64)?;
+            d.set_item("entry_type", format!("{:?}", entry.metadata.entry_type))?;
+            d.set_item("materialized", entry.materialized)?;
+            Ok(d.into())
+        })
+    }
+
+    fn read_bytes(&self, path: &str) -> PyResult<Vec<u8>> {
+        let vp = make_vp(path)?;
+        let rt = make_runtime();
+        rt.block_on(self.inner.read_bytes(&vp)).map_err(to_py_err)
+    }
+
+    fn write(&mut self, path: &str, content: &[u8]) -> PyResult<()> {
+        let vp = make_vp(path)?;
+        self.inner.write(&vp, content).map_err(to_py_err)
+    }
+
+    #[pyo3(signature = (reverse=false, relative_to=None))]
+    fn export_mapping(&self, reverse: bool, relative_to: Option<&str>) -> PyResult<PyObject> {
+        let direction = if reverse {
+            MappingDirection::VirtualToSource
+        } else {
+            MappingDirection::SourceToVirtual
+        };
+        let base = relative_to.map(PathBuf::from);
+        let mapping = self
+            .inner
+            .export_mapping(direction, base.as_deref())
+            .map_err(to_py_err)?;
+        Python::with_gil(|py| {
+            let d = PyDict::new(py);
+            for (k, v) in &mapping {
+                d.set_item(k, v)?;
+            }
+            Ok(d.into())
+        })
+    }
+
+    fn destroy(&self) -> PyResult<()> {
+        let root = &self.inner.snapshot_root;
+        std::fs::remove_dir_all(root)
+            .map_err(|e| PyIOError::new_err(format!("failed to destroy snapshot: {e}")))
     }
 }
 
@@ -243,5 +339,6 @@ fn parse_strategy(s: &str) -> PyResult<MaterializeStrategy> {
 #[pymodule]
 fn _agentdir(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Workspace>()?;
+    m.add_class::<PySnapshotWorkspace>()?;
     Ok(())
 }

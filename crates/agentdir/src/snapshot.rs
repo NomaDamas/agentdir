@@ -213,6 +213,7 @@ impl SnapshotWorkspace {
 
         if self.catalog.get(virtual_path).is_ok() {
             let entry = self.catalog.get_mut(virtual_path)?;
+            entry.source_path = SourcePath::new(dst);
             entry.metadata.size_bytes = size;
             entry.metadata.mtime_ns = mtime_ns;
             entry.materialized = true;
