@@ -58,6 +58,7 @@
   },
   "files": [
     "index.d.ts",
-    "index.js"
+    "index.js",
+    "README.md"
   ]
 }

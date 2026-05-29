@@ -5,6 +5,9 @@ edition = "2021"
 description = "Virtual filesystem for agent-optimized file exploration using CoW reflinks"
 license = "MIT"
 repository = "https://github.com/NomaDamas/agentdir"
+readme = "../../README.md"
+keywords = ["filesystem", "virtual-filesystem", "reflink", "copy-on-write", "agent"]
+categories = ["filesystem", "development-tools"]
 
 
 [lib]

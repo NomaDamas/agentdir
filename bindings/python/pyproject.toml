@@ -6,6 +6,7 @@ build-backend = "maturin"
 name = "agentdir"
 version = "0.1.2"
 description = "Python bindings for agentdir — virtual filesystem for agent-optimized file exploration"
+readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 classifiers = [
