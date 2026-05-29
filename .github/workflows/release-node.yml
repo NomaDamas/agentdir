@@ -127,7 +127,7 @@ jobs:
     needs: [build, test]
     environment:
       name: npm
-      url: https://www.npmjs.com/package/agentdir
+      url: https://www.npmjs.com/package/@nomadamas/agentdir
     permissions:
       contents: write
       id-token: write

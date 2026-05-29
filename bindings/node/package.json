@@ -1,5 +1,5 @@
 {
-  "name": "agentdir",
+  "name": "@nomadamas/agentdir",
   "version": "0.1.2",
   "description": "Virtual filesystem for agent-optimized file exploration using CoW reflinks",
   "main": "index.js",
