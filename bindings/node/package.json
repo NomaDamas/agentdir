@@ -1,8 +1,17 @@
 {
   "name": "agentdir",
   "version": "0.1.2",
+  "description": "Virtual filesystem for agent-optimized file exploration using CoW reflinks",
   "main": "index.js",
   "types": "index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NomaDamas/agentdir.git"
+  },
+  "homepage": "https://github.com/NomaDamas/agentdir#readme",
+  "bugs": {
+    "url": "https://github.com/NomaDamas/agentdir/issues"
+  },
   "napi": {
     "binaryName": "agentdir",
     "targets": [
