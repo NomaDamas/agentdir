@@ -172,7 +172,6 @@ pub enum MaterializeStrategy {
     #[default]
     Reflink,
     Symlink,
-    Hardlink,
     Virtual,
 }
 

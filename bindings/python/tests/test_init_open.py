@@ -27,10 +27,6 @@ class TestInit:
         ws = Workspace.init(tmp_dir, strategy="symlink")
         assert ws.status()["total_entries"] == 0
 
-    def test_init_with_strategy_hardlink(self, tmp_dir):
-        ws = Workspace.init(tmp_dir, strategy="hardlink")
-        assert ws.status()["total_entries"] == 0
-
     def test_init_with_strategy_virtual(self, tmp_dir):
         ws = Workspace.init(tmp_dir, strategy="virtual")
         assert ws.status()["total_entries"] == 0

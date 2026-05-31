@@ -89,38 +89,6 @@ async fn test_symlink_mode_dematerialize() {
 }
 
 #[tokio::test]
-async fn test_hardlink_mode_creates_hardlinks() {
-    let src = TempDir::new().unwrap();
-    let ws_dir = TempDir::new().unwrap();
-    std::fs::write(src.path().join("file.txt"), b"hardlink content").unwrap();
-
-    let mut ws =
-        Workspace::init_with_strategy(ws_dir.path().to_path_buf(), MaterializeStrategy::Hardlink)
-            .unwrap();
-    ws.map(
-        SourcePath::new(src.path().canonicalize().unwrap()),
-        VirtualPath::new("/docs").unwrap(),
-    )
-    .await
-    .unwrap();
-
-    let mat = ws_dir.path().join("docs/file.txt");
-    assert!(mat.exists());
-    assert!(!mat.symlink_metadata().unwrap().file_type().is_symlink());
-    assert_eq!(std::fs::read(&mat).unwrap(), b"hardlink content");
-
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::MetadataExt;
-        let src_ino = std::fs::metadata(src.path().join("file.txt"))
-            .unwrap()
-            .ino();
-        let mat_ino = std::fs::metadata(&mat).unwrap().ino();
-        assert_eq!(src_ino, mat_ino);
-    }
-}
-
-#[tokio::test]
 async fn test_virtual_mode_no_files_on_disk() {
     let src = TempDir::new().unwrap();
     let ws_dir = TempDir::new().unwrap();

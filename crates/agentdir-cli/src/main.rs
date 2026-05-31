@@ -29,7 +29,7 @@ enum Commands {
     Init {
         /// Path to create the workspace at
         path: PathBuf,
-        /// Materialization strategy: reflink, symlink, hardlink, or virtual
+        /// Materialization strategy: reflink, symlink, or virtual
         #[arg(long, default_value = "reflink", value_parser = parse_strategy)]
         strategy: String,
     },
@@ -114,9 +114,9 @@ enum Commands {
 
 fn parse_strategy(s: &str) -> std::result::Result<String, String> {
     match s {
-        "reflink" | "symlink" | "hardlink" | "virtual" => Ok(s.to_string()),
+        "reflink" | "symlink" | "virtual" => Ok(s.to_string()),
         other => Err(format!(
-            "unknown strategy '{other}'; expected reflink, symlink, hardlink, or virtual"
+            "unknown strategy '{other}'; expected reflink, symlink, or virtual"
         )),
     }
 }
@@ -124,7 +124,6 @@ fn parse_strategy(s: &str) -> std::result::Result<String, String> {
 fn strategy_from_str(s: &str) -> MaterializeStrategy {
     match s {
         "symlink" => MaterializeStrategy::Symlink,
-        "hardlink" => MaterializeStrategy::Hardlink,
         "virtual" => MaterializeStrategy::Virtual,
         _ => MaterializeStrategy::Reflink,
     }
@@ -183,9 +182,12 @@ async fn run(command: Commands, workspace_root: PathBuf) -> agentdir::error::Res
 
             let summary = ws.map(source_path, mount_path).await?;
             println!(
-                "Mapped: {} entries added ({} reflinked, {} copied, {} symlinked, {} hardlinked, {} dirs)",
-                summary.entries_added, summary.reflinked, summary.copied,
-                summary.symlinked, summary.hardlinked, summary.dirs_created
+                "Mapped: {} entries added ({} reflinked, {} copied, {} symlinked, {} dirs)",
+                summary.entries_added,
+                summary.reflinked,
+                summary.copied,
+                summary.symlinked,
+                summary.dirs_created
             );
             if summary.errors > 0 {
                 eprintln!("Warning: {} entries failed to materialize", summary.errors);
@@ -214,9 +216,12 @@ async fn run(command: Commands, workspace_root: PathBuf) -> agentdir::error::Res
 
             let summary = ws.map_batch(mappings).await?;
             println!(
-                "Batch mapped: {} entries ({} reflinked, {} copied, {} symlinked, {} hardlinked, {} dirs)",
-                summary.entries_added, summary.reflinked, summary.copied,
-                summary.symlinked, summary.hardlinked, summary.dirs_created
+                "Batch mapped: {} entries ({} reflinked, {} copied, {} symlinked, {} dirs)",
+                summary.entries_added,
+                summary.reflinked,
+                summary.copied,
+                summary.symlinked,
+                summary.dirs_created
             );
             if !summary.errors.is_empty() {
                 eprintln!("Warning: {} entries failed", summary.errors.len());

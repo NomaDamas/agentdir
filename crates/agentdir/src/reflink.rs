@@ -20,6 +20,16 @@ pub enum CloneResult {
 
 pub fn clone_file(src: &Path, dst: &Path) -> Result<CloneResult> {
     if dst.exists() {
+        #[cfg(windows)]
+        {
+            if let Ok(meta) = fs::metadata(dst) {
+                let mut perms = meta.permissions();
+                if perms.readonly() {
+                    perms.set_readonly(false);
+                    let _ = fs::set_permissions(dst, perms);
+                }
+            }
+        }
         fs::remove_file(dst).map_err(|e| {
             AgentdirError::ReflinkFailed(format!("failed to remove existing dst {:?}: {}", dst, e))
         })?;

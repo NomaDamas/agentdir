@@ -46,7 +46,6 @@ class TestBatchMap:
             "reflinked",
             "copied",
             "symlinked",
-            "hardlinked",
             "dirs_created",
         ):
             assert key in result

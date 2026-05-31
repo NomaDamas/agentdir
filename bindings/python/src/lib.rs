@@ -65,7 +65,6 @@ impl Workspace {
             d.set_item("reflinked", summary.reflinked)?;
             d.set_item("copied", summary.copied)?;
             d.set_item("symlinked", summary.symlinked)?;
-            d.set_item("hardlinked", summary.hardlinked)?;
             d.set_item("dirs_created", summary.dirs_created)?;
             d.set_item("errors", summary.errors)?;
             Ok(d.into())
@@ -206,7 +205,6 @@ impl Workspace {
             d.set_item("reflinked", summary.reflinked)?;
             d.set_item("copied", summary.copied)?;
             d.set_item("symlinked", summary.symlinked)?;
-            d.set_item("hardlinked", summary.hardlinked)?;
             d.set_item("dirs_created", summary.dirs_created)?;
             Ok(d.into())
         })
@@ -328,10 +326,9 @@ fn parse_strategy(s: &str) -> PyResult<MaterializeStrategy> {
     match s {
         "reflink" => Ok(MaterializeStrategy::Reflink),
         "symlink" => Ok(MaterializeStrategy::Symlink),
-        "hardlink" => Ok(MaterializeStrategy::Hardlink),
         "virtual" => Ok(MaterializeStrategy::Virtual),
         other => Err(PyValueError::new_err(format!(
-            "unknown strategy '{other}'; expected reflink, symlink, hardlink, or virtual"
+            "unknown strategy '{other}'; expected reflink, symlink, or virtual"
         ))),
     }
 }

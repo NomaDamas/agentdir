@@ -40,7 +40,6 @@ pub struct MapSummary {
     pub reflinked: usize,
     pub copied: usize,
     pub symlinked: usize,
-    pub hardlinked: usize,
     pub dirs_created: usize,
     pub errors: usize,
 }
@@ -51,7 +50,6 @@ pub struct BatchMapSummary {
     pub reflinked: usize,
     pub copied: usize,
     pub symlinked: usize,
-    pub hardlinked: usize,
     pub dirs_created: usize,
     pub errors: Vec<(String, String)>,
 }
@@ -175,7 +173,6 @@ impl Workspace {
             reflinked: batch_result.reflinked,
             copied: batch_result.copied,
             symlinked: batch_result.symlinked,
-            hardlinked: batch_result.hardlinked,
             dirs_created: batch_result.dirs_created,
             errors: batch_result.failed,
         })
@@ -253,7 +250,6 @@ impl Workspace {
             reflinked: batch_result.reflinked,
             copied: batch_result.copied,
             symlinked: batch_result.symlinked,
-            hardlinked: batch_result.hardlinked,
             dirs_created: batch_result.dirs_created,
             errors: batch_result
                 .errors

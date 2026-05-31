@@ -62,7 +62,6 @@ Initialize a new workspace at `path`. The `strategy` controls how files are mate
 |---|---|
 | `"reflink"` | CoW reflink, falls back to byte-copy if unsupported (default) |
 | `"symlink"` | Symbolic links |
-| `"hardlink"` | Hard links |
 | `"virtual"` | Metadata-only, no materialization |
 
 ##### `Workspace.open(path: str) -> Workspace`
@@ -83,7 +82,6 @@ Map a source directory into the virtual tree at `mount`. Returns a summary dict:
     "reflinked":     int,
     "copied":        int,
     "symlinked":     int,
-    "hardlinked":    int,
     "dirs_created":  int,
     "errors":        int,
 }
@@ -184,7 +182,6 @@ Map multiple files in one call. Each tuple is `(source_path, mount_point)`. Note
     "reflinked":     int,
     "copied":        int,
     "symlinked":     int,
-    "hardlinked":    int,
     "dirs_created":  int,
 }
 ```

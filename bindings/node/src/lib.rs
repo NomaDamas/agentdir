@@ -41,11 +41,10 @@ fn parse_strategy(s: &str) -> napi::Result<MaterializeStrategy> {
     match s {
         "reflink" => Ok(MaterializeStrategy::Reflink),
         "symlink" => Ok(MaterializeStrategy::Symlink),
-        "hardlink" => Ok(MaterializeStrategy::Hardlink),
         "virtual" => Ok(MaterializeStrategy::Virtual),
         other => Err(napi::Error::new(
             napi::Status::InvalidArg,
-            format!("unknown strategy '{other}'; expected reflink, symlink, hardlink, or virtual"),
+            format!("unknown strategy '{other}'; expected reflink, symlink, or virtual"),
         )),
     }
 }
@@ -56,7 +55,6 @@ pub struct MapSummary {
     pub reflinked: u32,
     pub copied: u32,
     pub symlinked: u32,
-    pub hardlinked: u32,
     pub dirs_created: u32,
     pub errors: u32,
 }
@@ -67,7 +65,6 @@ pub struct BatchMapSummary {
     pub reflinked: u32,
     pub copied: u32,
     pub symlinked: u32,
-    pub hardlinked: u32,
     pub dirs_created: u32,
     pub errors: Vec<Vec<String>>,
 }
@@ -113,7 +110,7 @@ impl JsWorkspace {
     /// Initialize a new workspace at the given path.
     ///
     /// @param path - Root directory for the workspace.
-    /// @param strategy - Materialization strategy: "reflink" (default), "symlink", "hardlink", or "virtual".
+    /// @param strategy - Materialization strategy: "reflink" (default), "symlink", or "virtual".
     #[napi(factory)]
     pub fn init(path: String, strategy: Option<String>) -> napi::Result<Self> {
         let strat = parse_strategy(strategy.as_deref().unwrap_or("reflink"))?;
@@ -151,7 +148,6 @@ impl JsWorkspace {
             reflinked: summary.reflinked as u32,
             copied: summary.copied as u32,
             symlinked: summary.symlinked as u32,
-            hardlinked: summary.hardlinked as u32,
             dirs_created: summary.dirs_created as u32,
             errors: summary.errors as u32,
         })
@@ -324,7 +320,6 @@ impl JsWorkspace {
             reflinked: summary.reflinked as u32,
             copied: summary.copied as u32,
             symlinked: summary.symlinked as u32,
-            hardlinked: summary.hardlinked as u32,
             dirs_created: summary.dirs_created as u32,
             errors: summary
                 .errors

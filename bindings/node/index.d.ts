@@ -27,7 +27,7 @@ export declare class Workspace {
    * Initialize a new workspace at the given path.
    *
    * @param path - Root directory for the workspace.
-   * @param strategy - Materialization strategy: "reflink" (default), "symlink", "hardlink", or "virtual".
+   * @param strategy - Materialization strategy: "reflink" (default), "symlink", or "virtual".
    */
   static init(path: string, strategy?: string | undefined | null): Workspace
   /**
@@ -130,7 +130,6 @@ export interface BatchMapSummary {
   reflinked: number
   copied: number
   symlinked: number
-  hardlinked: number
   dirsCreated: number
   errors: Array<Array<string>>
 }
@@ -140,7 +139,6 @@ export interface MapSummary {
   reflinked: number
   copied: number
   symlinked: number
-  hardlinked: number
   dirsCreated: number
   errors: number
 }

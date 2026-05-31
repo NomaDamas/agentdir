@@ -1,6 +1,6 @@
 [package]
 name = "agentdir"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 description = "Virtual filesystem for agent-optimized file exploration using CoW reflinks"
 license = "MIT"

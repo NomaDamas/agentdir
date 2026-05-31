@@ -62,7 +62,6 @@ Initialize a new workspace at `path`. The optional `strategy` controls how files
 |---|---|
 | `"reflink"` | Copy-on-write clone (default) |
 | `"symlink"` | Symbolic link |
-| `"hardlink"` | Hard link |
 | `"virtual"` | No materialization |
 
 ```ts
@@ -244,7 +243,6 @@ interface MapSummary {
   reflinked: number
   copied: number
   symlinked: number
-  hardlinked: number
   dirsCreated: number
   errors: number
 }
@@ -254,7 +252,6 @@ interface BatchMapSummary {
   reflinked: number
   copied: number
   symlinked: number
-  hardlinked: number
   dirsCreated: number
   errors: Array<Array<string>>
 }

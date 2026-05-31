@@ -1,6 +1,7 @@
 import os
 import tempfile
 
+import pytest
 from agentdir import Workspace
 
 
@@ -26,26 +27,31 @@ class TestSymlinkStrategy:
             assert ws.read_bytes("/sym/file.txt") == b"readable"
 
 
-class TestHardlinkStrategy:
-    def test_hardlink_creates_file(self):
+class TestReadOnlyMaterialization:
+    def test_materialized_file_is_readonly(self):
+        if hasattr(os, "geteuid") and os.geteuid() == 0:
+            pytest.skip("root bypasses read-only")
         with tempfile.TemporaryDirectory() as ws_dir, tempfile.TemporaryDirectory() as src:
             with open(os.path.join(src, "file.txt"), "wb") as f:
-                f.write(b"hardlinked")
+                f.write(b"readonly")
 
-            ws = Workspace.init(ws_dir, strategy="hardlink")
-            ws.map(src, "/hard")
-            mat_path = os.path.join(ws_dir, "hard", "file.txt")
+            ws = Workspace.init(ws_dir)
+            ws.map(src, "/ro")
+            mat_path = os.path.join(ws_dir, "ro", "file.txt")
             assert os.path.exists(mat_path)
-            assert not os.path.islink(mat_path)
+            assert (os.stat(mat_path).st_mode & 0o222) == 0
 
-    def test_hardlink_content_readable(self):
+    def test_source_still_writable_after_map(self):
         with tempfile.TemporaryDirectory() as ws_dir, tempfile.TemporaryDirectory() as src:
-            with open(os.path.join(src, "file.txt"), "wb") as f:
-                f.write(b"harddata")
+            src_file = os.path.join(src, "file.txt")
+            with open(src_file, "wb") as f:
+                f.write(b"writable")
 
-            ws = Workspace.init(ws_dir, strategy="hardlink")
-            ws.map(src, "/hard")
-            assert ws.read_bytes("/hard/file.txt") == b"harddata"
+            ws = Workspace.init(ws_dir)
+            ws.map(src, "/ro")
+            with open(src_file, "w") as f:
+                f.write("rewritten")
+            assert True
 
 
 class TestVirtualStrategy:

@@ -64,17 +64,6 @@ test('init / open: init with symlink strategy', (t) => {
   }
 })
 
-test('init / open: init with hardlink strategy', (t) => {
-  const dir = createTmpDir()
-  try {
-    const ws = Workspace.init(dir, 'hardlink')
-    t.truthy(ws)
-    t.true(existsSync(dir))
-  } finally {
-    cleanDir(dir)
-  }
-})
-
 test('init / open: init with virtual strategy', (t) => {
   const dir = createTmpDir()
   try {
@@ -243,7 +232,7 @@ test('map / unmap: map summary has reflinked or copied greater than zero', async
   const source = createSourceDir()
   try {
     const summary = await ws.map(source, '/src')
-    t.true(summary.reflinked + summary.copied + summary.symlinked + summary.hardlinked > 0)
+    t.true(summary.reflinked + summary.copied + summary.symlinked > 0)
   } finally {
     cleanDir(dir)
     cleanDir(source)
@@ -688,7 +677,6 @@ test('batch map: mapBatch summary fields are all numbers', async (t) => {
     t.is(typeof summary.reflinked, 'number')
     t.is(typeof summary.copied, 'number')
     t.is(typeof summary.symlinked, 'number')
-    t.is(typeof summary.hardlinked, 'number')
     t.is(typeof summary.dirsCreated, 'number')
   } finally {
     cleanDir(dir)
@@ -887,17 +875,6 @@ test('strategy: init with symlink strategy works', async (t) => {
   }
 })
 
-test('strategy: init with hardlink strategy works', async (t) => {
-  const dir = createTmpDir()
-  try {
-    const ws = Workspace.init(dir, 'hardlink')
-    const status = await ws.status()
-    t.is(status.totalEntries, 0)
-  } finally {
-    cleanDir(dir)
-  }
-})
-
 test('strategy: init with virtual strategy works', async (t) => {
   const dir = createTmpDir()
   try {
@@ -910,7 +887,7 @@ test('strategy: init with virtual strategy works', async (t) => {
 })
 
 test('strategy: each strategy produces accessible files via readBytes', async (t) => {
-  const strategies = ['reflink', 'symlink', 'hardlink', 'virtual']
+  const strategies = ['reflink', 'symlink', 'virtual']
   for (const strategy of strategies) {
     const dir = createTmpDir()
     const source = createSourceDir()

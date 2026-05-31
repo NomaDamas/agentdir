@@ -1,6 +1,6 @@
 # agentdir
 
-**Virtual filesystem for agent-optimized file exploration using CoW reflinks**
+**A read-only, agent-optimized navigation view of a codebase — edits are delegated back to the source**
 
 [![crates.io](https://img.shields.io/crates/v/agentdir)](https://crates.io/crates/agentdir)
 [![PyPI](https://img.shields.io/pypi/v/agentdir)](https://pypi.org/project/agentdir/)
@@ -16,7 +16,7 @@ agentdir is infrastructure-level plumbing. It gives you a virtual file tree that
 - **Virtual namespace** — map source directories into a virtual tree at arbitrary mount points, then move, copy, and rename entries without touching the originals
 - **CoW materialization** — files are cloned via reflinks on APFS (macOS) and Btrfs/XFS (Linux); falls back to byte-copy on NTFS (Windows)
 - **Accurate change tracking** — detects additions, modifications, and deletions in source directories via metadata (mtime + size) and propagates them to the virtual tree automatically
-- **Multiple materialization strategies** — `reflink` (default), `symlink`, `hardlink`, `virtual`
+- **Multiple materialization strategies** — `reflink` (default), `symlink`, `virtual`
 - **Snapshot support** — CoW forks of the workspace for isolated concurrent workspaces
 - **File-format-agnostic** — works with any file the OS can stat: docx, pptx, images, binaries, source code
 - **Cross-platform** — macOS, Linux, Windows; virtual paths always use `/` internally regardless of host OS
@@ -92,7 +92,7 @@ agentdir -w ./workspace mv /docs/readme.md /readme.md
 
 | Command | Description |
 |---------|-------------|
-| `init <path> [--strategy reflink\|symlink\|hardlink\|virtual]` | Initialize a new workspace |
+| `init <path> [--strategy reflink\|symlink\|virtual]` | Initialize a new workspace |
 | `map <source> <mount>` | Map a source directory into the virtual tree |
 | `map-batch --from-json <file>` | Apply a batch mapping from a JSON file `{"source_path":"virtual_path",...}` |
 | `unmap <mount>` | Remove a source mapping |

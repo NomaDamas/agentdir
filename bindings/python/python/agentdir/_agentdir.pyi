@@ -12,7 +12,7 @@ class Workspace:
         Args:
             path: Root directory for the workspace.
             strategy: Materialization strategy — one of "reflink", "symlink",
-                "hardlink", or "virtual".
+                or "virtual".
         """
         ...
 
@@ -33,7 +33,7 @@ class Workspace:
 
         Returns:
             Dict with keys: entries_added, reflinked, copied, symlinked,
-            hardlinked, dirs_created, errors.
+            dirs_created, errors.
         """
         ...
 
@@ -125,7 +125,7 @@ class Workspace:
 
         Returns:
             Dict with keys: entries_added, reflinked, copied, symlinked,
-            hardlinked, dirs_created.
+            dirs_created.
         """
         ...
 

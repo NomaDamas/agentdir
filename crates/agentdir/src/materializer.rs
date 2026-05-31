@@ -20,7 +20,6 @@ pub enum MaterializeResult {
     Copied(u64),
     DirCreated,
     Symlinked,
-    Hardlinked,
     Virtual,
 }
 
@@ -40,7 +39,6 @@ pub struct BatchResult {
     pub reflinked: usize,
     pub copied: usize,
     pub symlinked: usize,
-    pub hardlinked: usize,
     pub dirs_created: usize,
     pub errors: Vec<(VirtualPath, AgentdirError)>,
 }
@@ -85,6 +83,21 @@ impl Materializer {
         self.materialized_root.join(rel)
     }
 
+    fn set_readonly(path: &std::path::Path) -> Result<()> {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(path, fs::Permissions::from_mode(0o444))?;
+        }
+        #[cfg(windows)]
+        {
+            let mut perms = fs::metadata(path)?.permissions();
+            perms.set_readonly(true);
+            fs::set_permissions(path, perms)?;
+        }
+        Ok(())
+    }
+
     pub fn materialize_entry(&self, entry: &CatalogEntry) -> Result<MaterializeResult> {
         if matches!(self.strategy, MaterializeStrategy::Virtual) {
             return Ok(MaterializeResult::Virtual);
@@ -122,19 +135,10 @@ impl Materializer {
                         }
                         MaterializeResult::Symlinked
                     }
-                    MaterializeStrategy::Hardlink => {
-                        fs::hard_link(src, &dst).map_err(|e| {
-                            AgentdirError::ReflinkFailed(format!(
-                                "hardlink {} -> {:?}: {e}",
-                                src.display(),
-                                dst
-                            ))
-                        })?;
-                        MaterializeResult::Hardlinked
-                    }
                     MaterializeStrategy::Virtual => unreachable!(),
                     MaterializeStrategy::Reflink => {
                         let clone = reflink::clone_file(src, &dst)?;
+                        Self::set_readonly(&dst)?;
                         match clone {
                             CloneResult::Reflinked => MaterializeResult::Reflinked,
                             CloneResult::Copied(bytes) => MaterializeResult::Copied(bytes),
@@ -159,6 +163,16 @@ impl Materializer {
         if path.is_dir() && !path.is_symlink() {
             fs::remove_dir_all(&path)?;
         } else if path.exists() || path.symlink_metadata().is_ok() {
+            #[cfg(windows)]
+            {
+                if let Ok(meta) = fs::metadata(&path) {
+                    let mut perms = meta.permissions();
+                    if perms.readonly() {
+                        perms.set_readonly(false);
+                        let _ = fs::set_permissions(&path, perms);
+                    }
+                }
+            }
             fs::remove_file(&path)?;
         }
 
@@ -171,7 +185,7 @@ impl Materializer {
         }
 
         match self.strategy {
-            MaterializeStrategy::Symlink | MaterializeStrategy::Hardlink => {
+            MaterializeStrategy::Symlink => {
                 self.dematerialize_entry(&entry.virtual_path)?;
                 self.materialize_entry(entry)
             }
@@ -210,6 +224,7 @@ impl Materializer {
                     let _ = fs::remove_file(&tmp);
                     return Err(AgentdirError::Io(error));
                 }
+                Self::set_readonly(&dst)?;
 
                 Ok(result)
             }
@@ -260,10 +275,6 @@ impl Materializer {
                 Ok(MaterializeResult::Symlinked) => {
                     result.succeeded += 1;
                     result.symlinked += 1;
-                }
-                Ok(MaterializeResult::Hardlinked) => {
-                    result.succeeded += 1;
-                    result.hardlinked += 1;
                 }
                 Ok(MaterializeResult::Virtual) => {
                     result.succeeded += 1;
@@ -331,11 +342,7 @@ impl Materializer {
                 Ok(MaterializeResult::Reflinked) => summary.reflinked += 1,
                 Ok(MaterializeResult::Copied(_)) => summary.copied += 1,
                 Ok(MaterializeResult::DirCreated) => summary.dirs_created += 1,
-                Ok(
-                    MaterializeResult::Symlinked
-                    | MaterializeResult::Hardlinked
-                    | MaterializeResult::Virtual,
-                ) => {}
+                Ok(MaterializeResult::Symlinked | MaterializeResult::Virtual) => {}
                 Err(error) => summary.errors.push((entry.virtual_path.clone(), error)),
             }
         }
