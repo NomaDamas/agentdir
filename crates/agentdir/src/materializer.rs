@@ -220,6 +220,20 @@ impl Materializer {
                     }
                 };
 
+                // On Windows, fs::rename fails if the destination is read-only.
+                // Materialized files are set read-only (0o444) for the navigation-only
+                // contract, so clear the attribute before replacing the file.
+                #[cfg(windows)]
+                {
+                    if let Ok(meta) = fs::metadata(&dst) {
+                        let mut perms = meta.permissions();
+                        if perms.readonly() {
+                            perms.set_readonly(false);
+                            let _ = fs::set_permissions(&dst, perms);
+                        }
+                    }
+                }
+
                 if let Err(error) = fs::rename(&tmp, &dst) {
                     let _ = fs::remove_file(&tmp);
                     return Err(AgentdirError::Io(error));
