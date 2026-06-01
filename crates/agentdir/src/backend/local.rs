@@ -2,7 +2,7 @@ use std::fs;
 use std::time::UNIX_EPOCH;
 
 use async_trait::async_trait;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, oneshot};
 use walkdir::WalkDir;
 
 use crate::backend::{Backend, SourceEvent, WatchHandle};
@@ -113,7 +113,7 @@ impl Backend for LocalBackend {
         let cancel_token = tokio_util::sync::CancellationToken::new();
         let cancel_child = cancel_token.child_token();
 
-        let rt = tokio::runtime::Handle::current();
+        let (ready_tx, ready_rx) = oneshot::channel();
 
         std::thread::spawn(move || {
             let (debounce_tx, debounce_rx) = std::sync::mpsc::channel();
@@ -121,7 +121,11 @@ impl Backend for LocalBackend {
             let mut debouncer = match new_debouncer(Duration::from_millis(500), None, debounce_tx) {
                 Ok(d) => d,
                 Err(e) => {
-                    let _ = rt.block_on(tx_clone.send(SourceEvent::RescanNeeded));
+                    let error = AgentdirError::Io(std::io::Error::other(format!(
+                        "failed to create watcher debouncer: {e}"
+                    )));
+                    let _ = ready_tx.send(Err(error));
+                    let _ = tx_clone.blocking_send(SourceEvent::RescanNeeded);
                     tracing::error!("failed to create debouncer: {}", e);
                     return;
                 }
@@ -129,11 +133,19 @@ impl Backend for LocalBackend {
 
             for root in &roots_owned {
                 if let Err(e) = debouncer.watch(root, RecursiveMode::Recursive) {
+                    let error = AgentdirError::Io(std::io::Error::other(format!(
+                        "failed to watch {root:?}: {e}"
+                    )));
+                    let _ = ready_tx.send(Err(error));
                     tracing::warn!("failed to watch {:?}: {}", root, e);
+                    return;
                 }
             }
+            if ready_tx.send(Ok(())).is_err() {
+                return;
+            }
 
-            loop {
+            'watch_loop: loop {
                 if cancel_child.is_cancelled() {
                     break;
                 }
@@ -142,7 +154,9 @@ impl Backend for LocalBackend {
                     Ok(Ok(events)) => {
                         for event in events {
                             if event.need_rescan() {
-                                let _ = rt.block_on(tx_clone.send(SourceEvent::RescanNeeded));
+                                if tx_clone.blocking_send(SourceEvent::RescanNeeded).is_err() {
+                                    break 'watch_loop;
+                                }
                                 continue;
                             }
 
@@ -179,7 +193,9 @@ impl Backend for LocalBackend {
                             };
 
                             if let Some(ev) = source_event {
-                                let _ = rt.block_on(tx_clone.send(ev));
+                                if tx_clone.blocking_send(ev).is_err() {
+                                    break 'watch_loop;
+                                }
                             }
                         }
                     }
@@ -187,7 +203,9 @@ impl Backend for LocalBackend {
                         for e in errors {
                             tracing::warn!("watcher error: {}", e);
                         }
-                        let _ = rt.block_on(tx_clone.send(SourceEvent::RescanNeeded));
+                        if tx_clone.blocking_send(SourceEvent::RescanNeeded).is_err() {
+                            break;
+                        }
                     }
                     Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
                     Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
@@ -197,6 +215,9 @@ impl Backend for LocalBackend {
             }
         });
 
+        ready_rx
+            .await
+            .map_err(|e| AgentdirError::Io(std::io::Error::other(e)))??;
         Ok(WatchHandle::new(cancel_token))
     }
 

@@ -84,6 +84,25 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_start_waits_until_roots_are_watched() {
+        let dir = TempDir::new().unwrap();
+        let backend: Arc<dyn Backend> = Arc::new(LocalBackend);
+        let roots = vec![SourcePath::new(dir.path().to_path_buf())];
+
+        let watcher = FileWatcher::new(backend, roots);
+        let (mut rx, _handle) = watcher.start().await.unwrap();
+
+        std::fs::write(dir.path().join("immediate.txt"), b"hello").unwrap();
+
+        let event = timeout(Duration::from_secs(5), rx.recv()).await;
+        assert!(
+            event.is_ok(),
+            "watcher missed a file created immediately after start"
+        );
+        assert!(event.unwrap().is_some());
+    }
+
+    #[tokio::test]
     async fn test_watcher_cleanup() {
         let dir = TempDir::new().unwrap();
         let backend: Arc<dyn Backend> = Arc::new(LocalBackend);
