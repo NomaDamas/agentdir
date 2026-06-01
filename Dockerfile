@@ -1,6 +1,8 @@
 FROM rust:latest AS builder
 WORKDIR /app
 
+RUN rustup component add rustfmt clippy
+
 COPY Cargo.toml Cargo.lock ./
 COPY crates/agentdir/Cargo.toml crates/agentdir/Cargo.toml
 COPY crates/agentdir-cli/Cargo.toml crates/agentdir-cli/Cargo.toml
@@ -21,3 +23,4 @@ RUN cargo fmt --check && \
 FROM debian:bookworm-slim AS runtime
 COPY --from=builder /app/target/release/agentdir /usr/local/bin/agentdir
 ENTRYPOINT ["agentdir"]
+CMD ["--help"]

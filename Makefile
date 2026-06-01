@@ -54,11 +54,11 @@ cross-install:
 
 cross-build:
 	@echo "Checking Windows cross-compilation..."
-	cross build --workspace --target x86_64-pc-windows-gnu
+	cross build -p agentdir -p agentdir-cli --target x86_64-pc-windows-gnu
 
 cross-test:
 	@echo "Running Windows tests via cross + Wine..."
-	cross test --workspace --target x86_64-pc-windows-gnu
+	cross test -p agentdir -p agentdir-cli --target x86_64-pc-windows-gnu
 
 # === Python targets ===
 python-build:
