@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 name = "agentdir"
 version = "0.1.5"
-description = "Python bindings for agentdir — virtual filesystem for agent-optimized file exploration"
+description = "Python bindings for agentdir — virtual file tree infrastructure for agent-ready file layouts"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }

@@ -1,7 +1,7 @@
 {
   "name": "@nomadamas/agentdir",
   "version": "0.1.5",
-  "description": "Virtual filesystem for agent-optimized file exploration using CoW reflinks",
+  "description": "Virtual file tree infrastructure for agent-ready file layouts using CoW reflinks",
   "main": "index.js",
   "types": "index.d.ts",
   "repository": {
@@ -40,10 +40,11 @@
     "version": "napi version"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
     "@napi-rs/cli": "^3.2.0",
+    "@oxc-node/core": "^0.0.18",
     "ava": "^6.2.0",
-    "oxlint": "^0.16.0",
-    "@oxc-node/core": "^0.0.18"
+    "oxlint": "^0.16.0"
   },
   "ava": {
     "extensions": {

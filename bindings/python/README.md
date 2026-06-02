@@ -1,10 +1,10 @@
 # agentdir
 
-Virtual filesystem for agent-optimized file exploration using CoW reflinks.
+Virtual filesystem for agent-optimized exploration of general-purpose files using CoW reflinks.
 
-`agentdir` is a Python binding for the [agentdir](https://github.com/NomaDamas/agentdir) Rust library. It lets you map real directories into a virtual file tree, move and copy entries without touching source files, track source changes, and fork the tree into isolated snapshots via copy-on-write.
+`agentdir` is a Python binding for the [agentdir](https://github.com/NomaDamas/agentdir) Rust library. It lets you map real directories of documents, media, datasets, generated artifacts, plain text, binaries, or any other OS-visible files into a virtual file tree, move and copy entries without touching the originals, track original-file changes, and fork the tree into isolated snapshots via copy-on-write.
 
-- **Version:** 0.1.2
+- **Version:** 0.1.5
 - **License:** MIT
 - **Python:** >= 3.9
 - **Built with:** PyO3 + maturin (native Rust extension, abi3 wheels)
@@ -19,7 +19,7 @@ pip install agentdir
 
 No extra dependencies. The package ships pre-built abi3 wheels for Linux, macOS, and Windows.
 
-Installation only installs the binding. After mapping source files, call `Workspace.refresh()` whenever the source tree may have changed. The Python binding exposes reconciliation through `refresh()` and `refresh_with_hash_verification()`; it does not start the CLI watch loop for you.
+Installation only installs the binding. After mapping original files, call `Workspace.refresh()` whenever the original file tree may have changed. The Python binding exposes reconciliation through `refresh()` and `refresh_with_hash_verification()`; it does not start the CLI watch loop for you.
 
 ---
 
@@ -29,13 +29,13 @@ Installation only installs the binding. After mapping source files, call `Worksp
 from agentdir import Workspace
 
 ws = Workspace.init("./workspace")
-summary = ws.map("./my-docs", "/docs")
+summary = ws.map("./team-files", "/files")
 print(f"Mapped {summary['entries_added']} entries")
 
-content = ws.read_bytes("/docs/readme.md")
+content = ws.read_bytes("/files/q1-report.txt")
 print(content.decode())
 
-ws.mv("/docs/readme.md", "/readme.md")  # source files are untouched
+ws.mv("/files/q1-report.txt", "/reports/q1-report.txt")  # original files are untouched
 
 # Reconcile source changes before an agent/session depends on the view.
 sync = ws.refresh()
@@ -105,11 +105,11 @@ Remove the mapping at `mount` and clean up its entries. Returns:
 
 ##### `mv(from_path: str, to_path: str) -> None`
 
-Move a virtual entry. The source file on disk is not touched.
+Move a virtual entry. The original file on disk is not touched.
 
 ##### `cp(from_path: str, to_path: str) -> None`
 
-Copy a virtual entry. The source file on disk is not touched.
+Copy a virtual entry. The original file on disk is not touched.
 
 ##### `mkdir(path: str) -> None`
 
@@ -196,7 +196,7 @@ Map multiple files in one call. Each tuple is `(source_path, mount_point)`. Note
 
 ##### `rglob(pattern: str) -> list[str]`
 
-Match virtual paths against a glob pattern. Supports `*` and `**` wildcards (e.g. `"/docs/*.txt"`, `"/src/**/*.py"`). Returns a list of matching virtual paths.
+Match virtual paths against a glob pattern. Supports `*` and `**` wildcards (e.g. `"/files/*.pdf"`, `"/media/**/*.png"`). Returns a list of matching virtual paths.
 
 ##### `list_snapshots() -> list[str]`
 
@@ -218,7 +218,7 @@ Destroy a named snapshot and remove its files from disk.
 
 ### `SnapshotWorkspace`
 
-A CoW fork of a `Workspace`. Writes to a snapshot are isolated and do not affect the base workspace or any source files.
+A CoW fork of a `Workspace`. Writes to a snapshot are isolated and do not affect the base workspace or any original files.
 
 ##### `exists(path: str) -> bool`
 
@@ -254,13 +254,13 @@ Destroy this snapshot and remove all its files from disk.
 from agentdir import Workspace
 
 ws = Workspace.init("./workspace")
-summary = ws.map("./my-docs", "/docs")
+summary = ws.map("./team-files", "/files")
 print(f"Mapped {summary['entries_added']} entries")
 
-content = ws.read_bytes("/docs/readme.md")
+content = ws.read_bytes("/files/q1-report.txt")
 print(content.decode())
 
-ws.mv("/docs/readme.md", "/readme.md")  # source files untouched
+ws.mv("/files/q1-report.txt", "/reports/q1-report.txt")  # original files untouched
 ```
 
 ### Snapshots with isolated writes
@@ -269,14 +269,14 @@ ws.mv("/docs/readme.md", "/readme.md")  # source files untouched
 from agentdir import Workspace
 
 ws = Workspace.init("./workspace")
-ws.map("./project", "/src")
+ws.map("./team-files", "/files")
 
 snap = ws.snapshot("experiment")
-snap.write("/src/config.json", b'{"experimental": true}')
+snap.write("/files/q1-report.txt", b"snapshot-only draft")
 
 # Base workspace is unaffected:
-original = ws.read_bytes("/src/config.json")
-modified = snap.read_bytes("/src/config.json")
+original = ws.read_bytes("/files/q1-report.txt")
+modified = snap.read_bytes("/files/q1-report.txt")
 
 snap.destroy()
 ```

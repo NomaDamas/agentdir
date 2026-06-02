@@ -2,7 +2,7 @@
 name = "agentdir-cli"
 version = "0.1.5"
 edition = "2021"
-description = "CLI for agentdir — virtual filesystem for agent-optimized file exploration"
+description = "CLI for agentdir — virtual file tree infrastructure for agent-ready file layouts"
 license = "MIT"
 repository = "https://github.com/NomaDamas/agentdir"
 

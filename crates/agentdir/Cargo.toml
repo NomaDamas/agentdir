@@ -2,7 +2,7 @@
 name = "agentdir"
 version = "0.1.5"
 edition = "2021"
-description = "Virtual filesystem for agent-optimized file exploration using CoW reflinks"
+description = "Virtual file tree infrastructure for agent-ready file layouts using CoW reflinks"
 license = "MIT"
 repository = "https://github.com/NomaDamas/agentdir"
 readme = "../../README.md"

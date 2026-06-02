@@ -2,7 +2,7 @@
 
 ## What This Project Is
 
-Read-only, agent-optimized navigation view of a codebase. agentdir restructures a virtual file tree over real source files so AI agents can explore and navigate without touching the originals. The materialized view is read-only by design; when an agent needs to edit, it resolves the original source path via `stat()`/`export_mapping()` and edits the source directly.
+Read-only, agent-optimized navigation view for general-purpose file trees. agentdir restructures a virtual file tree over original files so AI agents, scripts, and humans can explore and navigate without touching the originals. The materialized view is read-only by design; when a consumer needs to edit, it resolves the original source path via `stat()`/`export_mapping()` and edits the original file directly.
 Rust workspace with two crates (`agentdir`, `agentdir-cli`) and Python bindings (`bindings/python`).
 
 ## Project Scope
@@ -10,12 +10,12 @@ Rust workspace with two crates (`agentdir`, `agentdir-cli`) and Python bindings 
 agentdir is **infrastructure-level plumbing** — it is intentionally NOT an AI intelligence layer.
 
 - **Read-only navigation view**: the materialized virtual tree is for exploration only, not editing. Materialized files are set read-only (0o444 on Unix, read-only attribute on Windows) to enforce this contract.
-- **Edits go to the source**: when an agent needs to modify a file, it resolves the original source path via `stat()` or `export_mapping()` and edits the source directly. The source remains writable; the virtual tree never is.
+- **Edits go to the original file**: when a consumer needs to modify a file, it resolves the original source path via `stat()` or `export_mapping()` and edits the original file directly. The original file remains writable; the virtual tree never is.
 - **Provides restructuring tools**: map, unmap, mv, cp, rename, mkdir, rmdir — enabling any consumer (AI agent, script, human) to reorganize a virtual file tree independently of the real source layout.
 - **The restructuring agent is out of scope**: agentdir gives you the tools to restructure; it does not decide *what* to restructure or *why*. That intelligence lives in a separate repository. The "agent" in the name refers to the intended consumer, not something this project implements.
-- **Targets all file types**: docx, pptx, images, binaries, source code — any file the OS can stat. agentdir is file-format-agnostic.
+- **Targets all file types**: documents, spreadsheets, presentations, PDFs, images, media, datasets, plain text, binaries — any file the OS can stat. agentdir is file-format-agnostic.
 - **No file parsing**: agentdir does not read, interpret, index, or transform file contents. It tracks whether a file has been created, modified, or deleted via metadata (mtime + size), and materializes copies via CoW reflinks.
-- **Change tracking is the core value**: accurate, cross-platform detection of source file mutations — additions, modifications, deletions — propagated to the virtual tree automatically.
+- **Change tracking is the core value**: accurate, cross-platform detection of original-file mutations — additions, modifications, deletions — propagated to the virtual tree automatically.
 
 ## Out of Scope
 
@@ -97,7 +97,7 @@ PyO3 bindings exposing `Workspace` class with full API: `init`, `open`, `map`, `
 4. Source symlinks are detected but not followed during scan (`follow_links: false`)
 5. All tests use `tempfile::TempDir` for isolation — no global filesystem side effects
 6. Source and materialized roots must not overlap (enforced by `validate_no_overlap`)
-7. Materialized files are read-only (0o444 on Unix, read-only attribute on Windows). The virtual tree is navigation-only; the source remains writable and is the sole edit target.
+7. Materialized files are read-only (0o444 on Unix, read-only attribute on Windows). The virtual tree is navigation-only; the original file remains writable and is the sole edit target.
 
 ## Future / Out of Current Scope
 
@@ -111,4 +111,4 @@ PyO3 bindings exposing `Workspace` class with full API: `init`, `open`, `map`, `
 
 This is not yet implemented. The current materialization (reflink or byte-copy + chmod 0o444) is the enforced contract today.
 
-**Materialization intelligence is out of scope here.** Deciding what to map where — which files belong in which virtual paths, how to restructure a codebase for agent consumption — is implemented in a separate repository. agentdir provides the primitives; the strategy lives elsewhere.
+**Materialization intelligence is out of scope here.** Deciding what to map where — which files belong in which virtual paths, how to restructure a file collection for agent consumption — is implemented in a separate repository. agentdir provides the primitives; the strategy lives elsewhere.

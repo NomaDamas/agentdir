@@ -1,6 +1,6 @@
 # @nomadamas/agentdir
 
-Virtual filesystem for agent-optimized file exploration using CoW reflinks.
+Virtual filesystem for agent-optimized exploration of general-purpose files using CoW reflinks.
 
 Built with [NAPI-RS](https://napi.rs/). Prebuilt native binaries are bundled per platform via `optionalDependencies`, so no compiler is required.
 
@@ -16,7 +16,7 @@ Built with [NAPI-RS](https://napi.rs/). Prebuilt native binaries are bundled per
 npm install @nomadamas/agentdir
 ```
 
-Installation only installs the native package. After mapping source files, call `workspace.refresh()` whenever the source tree may have changed. The Node binding exposes reconciliation through `refresh()` and `refreshWithHashVerification()`; it does not start the CLI watch loop for you.
+Installation only installs the native package. After mapping original files, call `workspace.refresh()` whenever the original file tree may have changed. The Node binding exposes reconciliation through `refresh()` and `refreshWithHashVerification()`; it does not start the CLI watch loop for you.
 
 ## Quick Start
 
@@ -27,13 +27,13 @@ import { Workspace } from '@nomadamas/agentdir'
 const ws = Workspace.init('./workspace')
 
 // everything else is async
-const summary = await ws.map('./my-docs', '/docs')
+const summary = await ws.map('./team-files', '/files')
 console.log(`Mapped ${summary.entriesAdded} entries`)
 
-const bytes = await ws.readBytes('/docs/readme.md')
+const bytes = await ws.readBytes('/files/q1-report.txt')
 console.log(bytes.toString())
 
-await ws.mv('/docs/readme.md', '/readme.md')  // source files are untouched
+await ws.mv('/files/q1-report.txt', '/reports/q1-report.txt')  // original files are untouched
 
 // Reconcile source changes before an agent/session depends on the view.
 const sync = await ws.refresh()
@@ -88,7 +88,7 @@ Open an existing workspace at `path`.
 map(source: string, mount: string): Promise<MapSummary>
 ```
 
-Map a source directory to a virtual mount point (e.g. `"/docs"`).
+Map a source directory to a virtual mount point (e.g. `"/files"`).
 
 ```ts
 unmap(mount: string): Promise<UnmapSummary>
@@ -162,7 +162,7 @@ Read the raw bytes of a file at the given virtual path.
 rglob(pattern: string): Promise<Array<string>>
 ```
 
-Match virtual paths against a glob pattern (e.g. `"/docs/*.txt"`, `"/docs/**/*.md"`). Returns an array of matching virtual paths.
+Match virtual paths against a glob pattern (e.g. `"/files/*.pdf"`, `"/media/**/*.png"`). Returns an array of matching virtual paths.
 
 ```ts
 exportMapping(reverse?: boolean, relativeTo?: string): Promise<Record<string, string>>
@@ -302,13 +302,13 @@ interface StatusResult {
 import { Workspace } from '@nomadamas/agentdir'
 
 const ws = Workspace.init('./workspace')           // sync
-const summary = await ws.map('./my-docs', '/docs') // async
+const summary = await ws.map('./team-files', '/files') // async
 console.log(`Mapped ${summary.entriesAdded} entries`)
 
-const bytes = await ws.readBytes('/docs/readme.md')
+const bytes = await ws.readBytes('/files/q1-report.txt')
 console.log(bytes.toString())
 
-await ws.mv('/docs/readme.md', '/readme.md')       // source files untouched
+await ws.mv('/files/q1-report.txt', '/reports/q1-report.txt')       // original files untouched
 ```
 
 ### Snapshots with isolated writes
@@ -317,17 +317,17 @@ await ws.mv('/docs/readme.md', '/readme.md')       // source files untouched
 import { Workspace } from '@nomadamas/agentdir'
 
 const ws = Workspace.init('./workspace')
-await ws.map('./project', '/src')
+await ws.map('./team-files', '/files')
 
 const snap = await ws.snapshot('experiment')
-await snap.write('/src/config.json', Buffer.from('{"experimental": true}'))
+await snap.write('/files/q1-report.txt', Buffer.from('snapshot-only draft'))
 
 // The base workspace is unaffected:
-const original = await ws.readBytes('/src/config.json')
-const modified  = await snap.readBytes('/src/config.json')
+const original = await ws.readBytes('/files/q1-report.txt')
+const modified  = await snap.readBytes('/files/q1-report.txt')
 
 console.log(original.toString()) // original content
-console.log(modified.toString()) // {"experimental": true}
+console.log(modified.toString()) // snapshot-only draft
 
 await snap.destroy()
 ```
@@ -339,11 +339,11 @@ import { Workspace } from '@nomadamas/agentdir'
 
 const ws = Workspace.open('./workspace')
 
-const mdFiles = await ws.rglob('/docs/**/*.md')
-console.log(mdFiles) // ['/docs/guide.md', '/docs/api/reference.md', ...]
+const pdfFiles = await ws.rglob('/files/**/*.pdf')
+console.log(pdfFiles) // ['/files/reports/q1.pdf', '/files/contracts/vendor.pdf', ...]
 
 const mapping = await ws.exportMapping()
-// { '/docs/guide.md': '/absolute/path/to/my-docs/guide.md', ... }
+// { '/files/reports/q1.pdf': '/absolute/path/to/team-files/reports/q1.pdf', ... }
 ```
 
 ---
