@@ -16,6 +16,8 @@ Built with [NAPI-RS](https://napi.rs/). Prebuilt native binaries are bundled per
 npm install @nomadamas/agentdir
 ```
 
+Installation only installs the native package. After mapping source files, call `workspace.refresh()` whenever the source tree may have changed. The Node binding exposes reconciliation through `refresh()` and `refreshWithHashVerification()`; it does not start the CLI watch loop for you.
+
 ## Quick Start
 
 ```js
@@ -32,6 +34,10 @@ const bytes = await ws.readBytes('/docs/readme.md')
 console.log(bytes.toString())
 
 await ws.mv('/docs/readme.md', '/readme.md')  // source files are untouched
+
+// Reconcile source changes before an agent/session depends on the view.
+const sync = await ws.refresh()
+console.log(sync)
 ```
 
 Both CommonJS and ESM are supported:
@@ -41,6 +47,8 @@ const { Workspace } = require('@nomadamas/agentdir')
 // or
 import { Workspace, SnapshotWorkspace } from '@nomadamas/agentdir'
 ```
+
+If you also install the CLI, long-running workflows can run `agentdir -w ./workspace watch --interval 60` in a separate process. The watcher combines filesystem events with periodic full rescans; Node applications should otherwise call `refresh()` on their own schedule or at session boundaries.
 
 ---
 

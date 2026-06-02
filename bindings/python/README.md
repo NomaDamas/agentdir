@@ -19,6 +19,8 @@ pip install agentdir
 
 No extra dependencies. The package ships pre-built abi3 wheels for Linux, macOS, and Windows.
 
+Installation only installs the binding. After mapping source files, call `Workspace.refresh()` whenever the source tree may have changed. The Python binding exposes reconciliation through `refresh()` and `refresh_with_hash_verification()`; it does not start the CLI watch loop for you.
+
 ---
 
 ## Quick Start
@@ -34,9 +36,15 @@ content = ws.read_bytes("/docs/readme.md")
 print(content.decode())
 
 ws.mv("/docs/readme.md", "/readme.md")  # source files are untouched
+
+# Reconcile source changes before an agent/session depends on the view.
+sync = ws.refresh()
+print(sync)
 ```
 
 All methods are **synchronous**. There is no async API. Internally the library runs a Tokio runtime, but the Python surface is fully blocking.
+
+If you also install the CLI, long-running workflows can run `agentdir -w ./workspace watch --interval 60` in a separate process. The watcher combines filesystem events with periodic full rescans; Python applications should otherwise call `refresh()` on their own schedule or at session boundaries.
 
 ---
 

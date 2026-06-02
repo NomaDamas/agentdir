@@ -68,6 +68,28 @@ Prebuilt binaries are available for:
 
 ---
 
+## Keep the View Synced
+
+Installation only installs the library or CLI. After you map source files, you should also choose how the workspace will stay current. This is not a nice-to-have: the virtual tree is a live navigation view, and source changes are propagated only when you run reconciliation.
+
+For CLI-driven work, run the watcher next to the agent or script that consumes the workspace:
+
+```sh
+agentdir -w ./workspace watch --interval 60
+```
+
+`watch` reacts to filesystem events for fast updates and also performs periodic full rescans so missed OS events are recovered. It runs in the foreground; put it under your process manager, terminal multiplexer, service supervisor, or task runner if you need it to stay alive.
+
+If you do not want a long-running watcher, call `refresh` before each agent session, before exporting mappings, or on your own schedule:
+
+```sh
+agentdir -w ./workspace refresh
+```
+
+Library users should do the same through their runtime surface: call `Workspace.refresh()` whenever the source may have changed, or use `refresh_with_hash_verification(true)` when you want an additional SHA-256 verification pass for unchanged mtime/size metadata.
+
+---
+
 ## CLI Usage
 
 The binary is named `agentdir`. Most commands accept a `-w`/`--workspace <dir>` flag to specify the workspace directory; if omitted, the current directory is used.
@@ -80,6 +102,9 @@ agentdir init ./workspace
 
 # Map a source directory into the virtual tree
 agentdir -w ./workspace map ./my-docs /docs
+
+# Keep the virtual tree current while agents consume it
+agentdir -w ./workspace watch --interval 60
 
 # Check workspace status
 agentdir -w ./workspace status
