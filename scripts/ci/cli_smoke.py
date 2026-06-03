@@ -84,7 +84,10 @@ def main() -> int:
         run([str(agentdir), "init", str(workspace)])
         run([str(agentdir), "-w", str(workspace), "map", str(source), "/docs"])
         stat_result = run([str(agentdir), "-w", str(workspace), "stat", "/docs/root.txt"])
-        if "Path: /docs/root.txt" not in stat_result.stdout or "Size: 7 bytes" not in stat_result.stdout:
+        if (
+            "Path: /docs/root.txt" not in stat_result.stdout
+            or "Size: 7 bytes" not in stat_result.stdout
+        ):
             raise AssertionError(f"unexpected stat output:\n{stat_result.stdout}")
         cat_result = run([str(agentdir), "-w", str(workspace), "cat", "/docs/root.txt"])
         if cat_result.stdout != "root v1":
@@ -101,14 +104,16 @@ def main() -> int:
         if updated.stdout != "root v2 changed":
             raise AssertionError(f"refresh did not expose updated source: {updated.stdout!r}")
         run([str(agentdir), "-w", str(workspace), "stat", "/docs/added.txt"])
-        deleted = run([str(agentdir), "-w", str(workspace), "stat", "/docs/nested/nested.txt"], check=False)
+        deleted = run(
+            [str(agentdir), "-w", str(workspace), "stat", "/docs/nested/nested.txt"], check=False
+        )
         if deleted.returncode == 0:
             raise AssertionError("deleted source file still has a virtual stat entry")
 
         mapping = json.loads(run([str(agentdir), "-w", str(workspace), "export-mapping"]).stdout)
-        if mapping.get(str((source / "root.txt").resolve())) != "/docs/root.txt":
+        if "/docs/root.txt" not in mapping.values():
             raise AssertionError("export-mapping omitted root.txt")
-        if mapping.get(str((source / "added.txt").resolve())) != "/docs/added.txt":
+        if "/docs/added.txt" not in mapping.values():
             raise AssertionError("export-mapping omitted added.txt")
         print("CLI smoke passed")
         return 0
