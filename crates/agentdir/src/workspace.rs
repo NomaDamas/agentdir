@@ -528,9 +528,8 @@ impl Workspace {
                             "source path {} is not under base {:?}",
                             e.source_path, base
                         ))
-                    })?
-                    .to_string_lossy()
-                    .into_owned(),
+                    })
+                    .map(relative_source_export_path)?,
                 None => e.source_path.as_path().to_string_lossy().into_owned(),
             };
             let virtual_str = e.virtual_path.as_str().to_string();
@@ -556,6 +555,17 @@ impl Workspace {
     pub fn save(&self) -> Result<()> {
         manifest::save(&self.catalog.manifest, &self.manifest_path)
     }
+}
+
+pub(crate) fn relative_source_export_path(path: &Path) -> String {
+    path.components()
+        .filter_map(|component| match component {
+            std::path::Component::Normal(part) => Some(part.to_string_lossy()),
+            std::path::Component::CurDir => None,
+            _ => Some(component.as_os_str().to_string_lossy()),
+        })
+        .collect::<Vec<_>>()
+        .join("/")
 }
 
 fn virtual_path_for_source(

@@ -1,4 +1,4 @@
-use agentdir::types::{SourcePath, VirtualPath};
+use agentdir::types::{MappingDirection, SourcePath, VirtualPath};
 use agentdir::workspace::Workspace;
 use tempfile::TempDir;
 
@@ -7,6 +7,8 @@ fn setup_base_workspace() -> (TempDir, TempDir, Workspace) {
     let ws_dir = TempDir::new().unwrap();
     std::fs::write(src.path().join("file1.txt"), b"hello").unwrap();
     std::fs::write(src.path().join("file2.txt"), b"world").unwrap();
+    std::fs::create_dir(src.path().join("nested")).unwrap();
+    std::fs::write(src.path().join("nested/file.txt"), b"nested").unwrap();
     let ws = Workspace::init(ws_dir.path().to_path_buf()).unwrap();
     (src, ws_dir, ws)
 }
@@ -234,4 +236,42 @@ async fn test_open_snapshot() {
     let snap = ws.open_snapshot("run_001").unwrap();
     assert!(snap.exists(&VirtualPath::new("/output.txt").unwrap()));
     assert!(snap.exists(&VirtualPath::new("/docs/file1.txt").unwrap()));
+}
+
+#[tokio::test]
+async fn test_snapshot_export_relative_to_normalizes_separators() {
+    let (src, _ws_dir, mut ws) = setup_base_workspace();
+    let canonical_src = src.path().canonicalize().unwrap();
+    ws.map(
+        SourcePath::new(canonical_src.clone()),
+        VirtualPath::new("/docs").unwrap(),
+    )
+    .await
+    .unwrap();
+
+    let snap = ws.snapshot("run_001").unwrap();
+
+    let source_to_virtual = snap
+        .export_mapping(MappingDirection::SourceToVirtual, Some(&canonical_src))
+        .unwrap();
+    assert_eq!(
+        source_to_virtual.get("file1.txt").unwrap(),
+        "/docs/file1.txt"
+    );
+    assert_eq!(
+        source_to_virtual.get("nested/file.txt").unwrap(),
+        "/docs/nested/file.txt"
+    );
+
+    let virtual_to_source = snap
+        .export_mapping(MappingDirection::VirtualToSource, Some(&canonical_src))
+        .unwrap();
+    assert_eq!(
+        virtual_to_source.get("/docs/file1.txt").unwrap(),
+        "file1.txt"
+    );
+    assert_eq!(
+        virtual_to_source.get("/docs/nested/file.txt").unwrap(),
+        "nested/file.txt"
+    );
 }
