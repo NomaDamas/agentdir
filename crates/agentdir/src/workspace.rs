@@ -603,6 +603,50 @@ fn virtual_path_for_relative(mount: &VirtualPath, rel: &Path) -> Result<VirtualP
     VirtualPath::new(format!("{}{separator}{rel_str}", mount.as_str()))
 }
 
+fn validate_absolute_virtual_path(path: &VirtualPath, label: &str) -> Result<()> {
+    if !path.is_absolute() {
+        return Err(AgentdirError::InvalidPath(format!(
+            "{label} must be an absolute virtual path"
+        )));
+    }
+    Ok(())
+}
+
+fn validate_new_name(new_name: &str) -> Result<()> {
+    if new_name.contains('/') || new_name.contains('\\') {
+        return Err(AgentdirError::InvalidPath(
+            "new name must not contain path separators".into(),
+        ));
+    }
+    if new_name.is_empty() {
+        return Err(AgentdirError::InvalidPath(
+            "new name must not be empty".into(),
+        ));
+    }
+    Ok(())
+}
+
+fn rebase_virtual_path(
+    path: &VirtualPath,
+    from: &VirtualPath,
+    to: &VirtualPath,
+) -> Result<VirtualPath> {
+    if path.as_str() == from.as_str() {
+        return Ok(to.clone());
+    }
+    let from_prefix = if from.as_str() == "/" {
+        "/".to_string()
+    } else {
+        format!("{}/", from.as_str())
+    };
+    let rest = path
+        .as_str()
+        .strip_prefix(&from_prefix)
+        .ok_or_else(|| AgentdirError::InvalidPath(format!("{} is not under {}", path, from)))?;
+    let separator = if to.as_str() == "/" { "" } else { "/" };
+    VirtualPath::new(format!("{}{separator}{rest}", to.as_str()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -665,7 +709,7 @@ mod tests {
         }
 
         let ws = Workspace::open(ws_dir.path().to_path_buf()).unwrap();
-        assert!(ws.catalog.len() > 0);
+        assert!(!ws.catalog.is_empty());
         assert_eq!(ws.catalog.source_roots().len(), 1);
     }
 
@@ -739,8 +783,7 @@ mod tests {
         .await
         .unwrap();
 
-        let initial_count = ws.catalog.len();
-        assert!(initial_count > 0);
+        assert!(!ws.catalog.is_empty());
 
         ws.unmap(&VirtualPath::new("/docs").unwrap()).unwrap();
         assert_eq!(ws.catalog.len(), 0);
@@ -769,48 +812,4 @@ mod tests {
         let result = virtual_path_for_relative(&mount, rel).unwrap();
         assert_eq!(result.as_str(), "/docs");
     }
-}
-
-fn validate_absolute_virtual_path(path: &VirtualPath, label: &str) -> Result<()> {
-    if !path.is_absolute() {
-        return Err(AgentdirError::InvalidPath(format!(
-            "{label} must be an absolute virtual path"
-        )));
-    }
-    Ok(())
-}
-
-fn validate_new_name(new_name: &str) -> Result<()> {
-    if new_name.contains('/') || new_name.contains('\\') {
-        return Err(AgentdirError::InvalidPath(
-            "new name must not contain path separators".into(),
-        ));
-    }
-    if new_name.is_empty() {
-        return Err(AgentdirError::InvalidPath(
-            "new name must not be empty".into(),
-        ));
-    }
-    Ok(())
-}
-
-fn rebase_virtual_path(
-    path: &VirtualPath,
-    from: &VirtualPath,
-    to: &VirtualPath,
-) -> Result<VirtualPath> {
-    if path.as_str() == from.as_str() {
-        return Ok(to.clone());
-    }
-    let from_prefix = if from.as_str() == "/" {
-        "/".to_string()
-    } else {
-        format!("{}/", from.as_str())
-    };
-    let rest = path
-        .as_str()
-        .strip_prefix(&from_prefix)
-        .ok_or_else(|| AgentdirError::InvalidPath(format!("{} is not under {}", path, from)))?;
-    let separator = if to.as_str() == "/" { "" } else { "/" };
-    VirtualPath::new(format!("{}{separator}{rest}", to.as_str()))
 }
