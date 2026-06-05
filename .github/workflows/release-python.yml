@@ -95,24 +95,11 @@ jobs:
 
       - name: Install wheel
         shell: bash
-        run: pip install dist/*.whl
+        run: python -m pip install --no-index --find-links dist agentdir
 
       - name: Import and smoke agentdir
         shell: bash
-        run: |
-          python - <<'PY'
-          import tempfile
-          from pathlib import Path
-
-          import agentdir
-          from agentdir import Workspace
-
-          with tempfile.TemporaryDirectory() as temp:
-              workspace = Path(temp) / "workspace"
-              ws = Workspace.init(str(workspace))
-              assert agentdir.Workspace is Workspace
-              assert ws.status()["total_entries"] == 0
-          PY
+        run: python scripts/ci/python_wheel_smoke.py
 
   publish:
     name: Publish to PyPI

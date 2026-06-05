@@ -67,6 +67,7 @@ def assert_materialized_readonly(path: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--agentdir", required=True)
+    parser.add_argument("--keep-temp", action="store_true")
     args = parser.parse_args()
     agentdir = Path(args.agentdir)
     if not agentdir.exists():
@@ -118,7 +119,10 @@ def main() -> int:
         print("CLI smoke passed")
         return 0
     finally:
-        shutil.rmtree(temp, ignore_errors=True)
+        if args.keep_temp:
+            print(f"keeping temp directory: {temp}")
+        else:
+            shutil.rmtree(temp, ignore_errors=True)
 
 
 if __name__ == "__main__":

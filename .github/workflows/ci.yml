@@ -94,6 +94,18 @@ jobs:
           fi
           python scripts/ci/strategy_smoke.py --agentdir "$AGENTDIR_BIN"
 
+  release-qa:
+    name: Release QA artifact checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: python3 crates/agentdir/tests/issue_18_release_qa.py
+
   python:
     name: Python (ruff, deptry, pytest)
     runs-on: ubuntu-latest

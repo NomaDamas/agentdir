@@ -81,8 +81,11 @@ def run_packaging_checks() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--metadata-only", action="store_true")
+    parser.add_argument("--expected-version")
     args = parser.parse_args()
     version = assert_all_versions_match()
+    if args.expected_version is not None and version != args.expected_version:
+        raise AssertionError(f"version mismatch: expected {args.expected_version}, found {version}")
     if not args.metadata_only:
         run_packaging_checks()
     print(f"Release metadata preflight passed: version {version}")
