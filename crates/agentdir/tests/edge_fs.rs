@@ -33,7 +33,7 @@ async fn test_empty_source_directory_maps_cleanly() {
     let summary = map_source(&mut ws, &src, "/empty").await.unwrap();
 
     assert!(summary.entries_added <= 1);
-    assert!(ws.catalog.get(&vp("/empty")).is_ok() || ws.catalog.len() == 0);
+    assert!(ws.catalog.get(&vp("/empty")).is_ok() || ws.catalog.is_empty());
     assert_eq!(summary.errors, 0);
 }
 
