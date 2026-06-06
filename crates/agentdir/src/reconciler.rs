@@ -219,7 +219,8 @@ impl Reconciler {
         actions: &[ChangeAction],
     ) -> Result<ReconcileSummary> {
         let mut summary = ReconcileSummary::default();
-        if let Err(errors) = Self::preflight_actions(catalog, actions) {
+        let actions = Self::normalize_replacement_actions(catalog, actions);
+        if let Err(errors) = Self::preflight_actions(catalog, &actions) {
             summary.errors = errors;
             return Ok(summary);
         }
@@ -303,6 +304,84 @@ impl Reconciler {
 
         Self::cleanup_backup(&backup);
         Ok(summary)
+    }
+
+    fn normalize_replacement_actions(
+        catalog: &Catalog,
+        actions: &[ChangeAction],
+    ) -> Vec<ChangeAction> {
+        let replacement_targets = actions
+            .iter()
+            .flat_map(|action| match action {
+                ChangeAction::Add {
+                    source,
+                    virtual_path,
+                    ..
+                } if source.as_path().exists() => {
+                    let existing = catalog.find_all_by_source(source);
+                    if existing.is_empty() {
+                        vec![virtual_path.as_str().to_string()]
+                    } else {
+                        existing
+                            .into_iter()
+                            .map(|entry| entry.virtual_path.as_str().to_string())
+                            .collect()
+                    }
+                }
+                ChangeAction::Refresh {
+                    virtual_path,
+                    source,
+                    ..
+                } if source.as_path().exists() => {
+                    vec![virtual_path.as_str().to_string()]
+                }
+                ChangeAction::Add { .. }
+                | ChangeAction::Refresh { .. }
+                | ChangeAction::Remove { .. }
+                | ChangeAction::UpdateHash { .. } => Vec::new(),
+            })
+            .collect::<HashSet<_>>();
+
+        actions
+            .iter()
+            .flat_map(|action| match action {
+                ChangeAction::Remove { virtual_path }
+                    if replacement_targets.contains(virtual_path.as_str()) =>
+                {
+                    Vec::new()
+                }
+                ChangeAction::Add {
+                    source,
+                    virtual_path,
+                    metadata,
+                } => {
+                    if !source.as_path().exists() {
+                        Vec::new()
+                    } else {
+                        let existing = catalog.find_all_by_source(source);
+                        if existing.is_empty() {
+                            vec![ChangeAction::Add {
+                                source: source.clone(),
+                                virtual_path: virtual_path.clone(),
+                                metadata: metadata.clone(),
+                            }]
+                        } else {
+                            existing
+                                .into_iter()
+                                .map(|entry| ChangeAction::Refresh {
+                                    virtual_path: entry.virtual_path.clone(),
+                                    source: source.clone(),
+                                    new_metadata: metadata.clone(),
+                                    content_hash: None,
+                                })
+                                .collect()
+                        }
+                    }
+                }
+                ChangeAction::Refresh { source, .. } if !source.as_path().exists() => Vec::new(),
+                _ => vec![action.clone()],
+            })
+            .collect()
     }
 
     fn backup_snapshot_materialized(

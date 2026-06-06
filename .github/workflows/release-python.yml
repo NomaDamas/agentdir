@@ -62,10 +62,49 @@ jobs:
           name: wheels-sdist
           path: bindings/python/dist/*.tar.gz
 
+  smoke:
+    name: Smoke wheel (${{ matrix.os }}, ${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64
+          - os: macos-latest
+            target: aarch64
+          - os: windows-latest
+            target: x86_64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Release metadata preflight
+        working-directory: bindings/python
+        run: python ../../scripts/ci/release_preflight.py --metadata-only
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}-${{ matrix.target }}
+          path: dist
+
+      - name: Install wheel
+        shell: bash
+        run: python -m pip install --no-index --find-links dist agentdir
+
+      - name: Import and smoke agentdir
+        shell: bash
+        run: python scripts/ci/python_wheel_smoke.py
+
   publish:
     name: Publish to PyPI
     runs-on: ubuntu-latest
-    needs: [build, sdist]
+    needs: [build, sdist, smoke]
     environment:
       name: pypi
       url: https://pypi.org/p/agentdir

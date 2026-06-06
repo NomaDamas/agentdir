@@ -164,7 +164,7 @@ async fn test_persistence_roundtrip() {
     }
 
     let ws = Workspace::open(ws_dir.path().to_path_buf()).unwrap();
-    assert!(ws.catalog.len() > 0);
+    assert!(!ws.catalog.is_empty());
     assert_eq!(ws.catalog.source_roots().len(), 1);
 
     assert_eq!(
