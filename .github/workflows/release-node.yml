@@ -139,9 +139,17 @@ jobs:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Install dependencies
         working-directory: bindings/node
         run: npm install
+
+      - name: Release metadata preflight
+        working-directory: bindings/node
+        run: python ../../scripts/ci/release_preflight.py --metadata-only
 
       - name: Create npm dirs
         working-directory: bindings/node

@@ -10,7 +10,7 @@ use crate::materializer::Materializer;
 use crate::types::{
     CatalogEntry, EntryType, MaterializeStrategy, SourceMetadata, SourcePath, VirtualPath,
 };
-use crate::workspace::Workspace;
+use crate::workspace::{relative_source_export_path, Workspace};
 
 pub struct SnapshotWorkspace {
     pub name: String,
@@ -262,9 +262,8 @@ impl SnapshotWorkspace {
                             "source {} is not under {:?}",
                             e.source_path, base
                         ))
-                    })?
-                    .to_string_lossy()
-                    .into_owned(),
+                    })
+                    .map(relative_source_export_path)?,
                 None => e.source_path.as_path().to_string_lossy().into_owned(),
             };
             let virtual_str = e.virtual_path.as_str().to_string();

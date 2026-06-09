@@ -18,6 +18,13 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Release metadata preflight
+        run: python scripts/ci/release_preflight.py --metadata-only
+
       - name: Preflight packaging check (agentdir)
         run: cargo publish -p agentdir --dry-run
 
