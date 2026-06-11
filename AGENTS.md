@@ -101,7 +101,7 @@ PyO3 bindings exposing `Workspace` class with full API: `init`, `open`, `map`, `
 
 ## Future / Out of Current Scope
 
-**True zero-copy read-only view (not yet implemented).** On non-reflink filesystems (ext4, NTFS), the current byte-copy fallback duplicates disk usage. The planned next step is OS-level mount mechanisms that give a read-only view without copying data at all:
+**True zero-copy read-only view (evaluated; remains a documented limitation).** On non-reflink filesystems (ext4, NTFS), the current byte-copy fallback duplicates disk usage. The feasibility of OS-level mount mechanisms that give a read-only view without copying data was investigated in [`docs/zero-copy-readonly-views.md`](docs/zero-copy-readonly-views.md):
 
 | Platform | Mechanism | Notes |
 |----------|-----------|-------|
@@ -109,6 +109,6 @@ PyO3 bindings exposing `Workspace` class with full API: `init`, `open`, `map`, `
 | Windows | WinFsp or ProjFS passthrough | Read-only virtual filesystem driver |
 | macOS | Already handled | APFS reflinks are effectively zero-copy |
 
-This is not yet implemented. The current materialization (reflink or byte-copy + chmod 0o444) is the enforced contract today.
+This is not yet implemented, and per the [feasibility study](docs/zero-copy-readonly-views.md) it **remains a documented limitation** rather than an active implementation project: every zero-copy mechanism that also supports an arbitrary restructured tree (FUSE on Linux, ProjFS on Windows) needs a long-lived daemon and an OS feature/driver. The current materialization (reflink on CoW filesystems — APFS/Btrfs/XFS — or byte-copy + chmod 0o444 elsewhere) is the enforced contract today. See the study for per-platform recommendations and the trigger conditions that would reopen this as a feature-flagged project.
 
 **Materialization intelligence is out of scope here.** Deciding what to map where — which files belong in which virtual paths, how to restructure a file collection for agent consumption — is implemented in a separate repository. agentdir provides the primitives; the strategy lives elsewhere.
