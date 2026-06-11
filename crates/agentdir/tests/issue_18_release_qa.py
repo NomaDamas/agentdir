@@ -120,6 +120,21 @@ def test_node_package_lock_root_version_matches_package_json() -> None:
     assert lock["packages"][""]["version"] == package["version"]
 
 
+def test_release_rust_workflow_dry_runs_cli_before_publish() -> None:
+    workflow = read(".github/workflows/release-rust.yml")
+    assert "cargo publish -p agentdir-cli --dry-run" in workflow
+    dry_run_at = workflow.index("cargo publish -p agentdir-cli --dry-run")
+    publish_at = workflow.index("Publish agentdir-cli")
+    index_at = workflow.index("Wait for crates.io sparse index")
+    assert index_at < dry_run_at < publish_at
+
+
+def test_release_node_workflow_packs_before_publish() -> None:
+    workflow = read(".github/workflows/release-node.yml")
+    assert "npm pack --dry-run" in workflow
+    assert workflow.index("npm pack --dry-run") < workflow.index("npm publish --access public")
+
+
 def main() -> int:
     failures = 0
     for name, check in sorted(globals().items()):

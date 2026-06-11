@@ -53,6 +53,9 @@ jobs:
           echo "ERROR: agentdir $VERSION did not appear in sparse index in time"
           exit 1
 
+      - name: Preflight packaging check (agentdir-cli)
+        run: cargo publish -p agentdir-cli --dry-run
+
       - name: Publish agentdir-cli
         run: cargo publish -p agentdir-cli || echo "::warning::agentdir-cli publish failed (may already exist)"
         env:
