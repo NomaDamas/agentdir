@@ -164,6 +164,10 @@ jobs:
         working-directory: bindings/node
         run: npx napi artifacts --build-output-dir artifacts
 
+      - name: Preflight packaging check (npm pack)
+        working-directory: bindings/node
+        run: npm pack --dry-run
+
       - name: Publish
         working-directory: bindings/node
         run: npm publish --access public --provenance

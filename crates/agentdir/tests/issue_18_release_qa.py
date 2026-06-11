@@ -15,6 +15,8 @@ def read(path: str) -> str:
 
 def test_ci_runs_rust_workspace_tests_on_linux_macos_windows() -> None:
     workflow = read(".github/workflows/ci.yml")
+    assert "branches: [main]" in workflow
+    assert "branches: [master]" not in workflow
     assert "os: [ubuntu-latest, macos-latest, windows-latest]" in workflow
     assert re.search(r"runs-on:\s*\$\{\{\s*matrix\.os\s*\}\}", workflow)
     assert "cargo test --workspace" in workflow
@@ -118,6 +120,21 @@ def test_node_package_lock_root_version_matches_package_json() -> None:
     lock = json.loads(read("bindings/node/package-lock.json"))
     assert lock["version"] == package["version"]
     assert lock["packages"][""]["version"] == package["version"]
+
+
+def test_release_rust_workflow_dry_runs_cli_before_publish() -> None:
+    workflow = read(".github/workflows/release-rust.yml")
+    assert "cargo publish -p agentdir-cli --dry-run" in workflow
+    dry_run_at = workflow.index("cargo publish -p agentdir-cli --dry-run")
+    publish_at = workflow.index("Publish agentdir-cli")
+    index_at = workflow.index("Wait for crates.io sparse index")
+    assert index_at < dry_run_at < publish_at
+
+
+def test_release_node_workflow_packs_before_publish() -> None:
+    workflow = read(".github/workflows/release-node.yml")
+    assert "npm pack --dry-run" in workflow
+    assert workflow.index("npm pack --dry-run") < workflow.index("npm publish --access public")
 
 
 def main() -> int:

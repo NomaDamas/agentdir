@@ -18,6 +18,9 @@ fn setup_workspace_with_files(file_specs: &[(&str, &[u8])]) -> (TempDir, TempDir
     let ws = Workspace::init(ws_dir.path().to_path_buf()).unwrap();
     (src, ws_dir, ws)
 }
+fn sleep_before_same_size_source_modification() {
+    std::thread::sleep(std::time::Duration::from_millis(20));
+}
 
 fn sleep_after_source_modification() {
     std::thread::sleep(std::time::Duration::from_millis(10));
@@ -57,6 +60,7 @@ async fn test_refresh_detects_mtime_change() {
     .await
     .unwrap();
 
+    sleep_before_same_size_source_modification();
     std::fs::write(src.path().join("file.txt"), b"same").unwrap();
     sleep_after_source_modification();
 
@@ -292,6 +296,7 @@ async fn test_double_refresh_is_idempotent() {
     .await
     .unwrap();
 
+    sleep_before_same_size_source_modification();
     std::fs::write(src.path().join("file.txt"), b"new").unwrap();
     sleep_after_source_modification();
 
