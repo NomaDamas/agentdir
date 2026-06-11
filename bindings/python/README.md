@@ -4,7 +4,7 @@ Virtual filesystem for agent-optimized exploration of general-purpose files usin
 
 `agentdir` is a Python binding for the [agentdir](https://github.com/NomaDamas/agentdir) Rust library. It lets you map real directories of documents, media, datasets, generated artifacts, plain text, binaries, or any other OS-visible files into a virtual file tree, move and copy entries without touching the originals, track original-file changes, and fork the tree into isolated snapshots via copy-on-write.
 
-- **Version:** 0.1.5
+- **Version:** 0.1.6
 - **License:** MIT
 - **Python:** >= 3.9
 - **Built with:** PyO3 + maturin (native Rust extension, abi3 wheels)

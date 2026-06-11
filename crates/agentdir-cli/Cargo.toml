@@ -1,6 +1,6 @@
 [package]
 name = "agentdir-cli"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 description = "CLI for agentdir — virtual file tree infrastructure for agent-ready file layouts"
 license = "MIT"
@@ -12,7 +12,7 @@ path = "src/main.rs"
 doc = false
 
 [dependencies]
-agentdir = { path = "../agentdir", version = "0.1.5" }
+agentdir = { path = "../agentdir", version = "0.1.6" }
 clap = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }

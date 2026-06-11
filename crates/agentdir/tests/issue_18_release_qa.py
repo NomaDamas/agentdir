@@ -5,7 +5,6 @@ import re
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -70,9 +69,15 @@ def test_release_preflight_checks_versions_and_packaging_commands() -> None:
     ):
         assert command in script
     assert "Release metadata preflight passed" in script
-    assert "scripts/ci/release_preflight.py --metadata-only" in read(".github/workflows/release-rust.yml")
-    assert "../../scripts/ci/release_preflight.py --metadata-only" in read(".github/workflows/release-node.yml")
-    assert "../../scripts/ci/release_preflight.py --metadata-only" in read(".github/workflows/release-python.yml")
+    assert "scripts/ci/release_preflight.py --metadata-only" in read(
+        ".github/workflows/release-rust.yml"
+    )
+    assert "../../scripts/ci/release_preflight.py --metadata-only" in read(
+        ".github/workflows/release-node.yml"
+    )
+    assert "../../scripts/ci/release_preflight.py --metadata-only" in read(
+        ".github/workflows/release-python.yml"
+    )
 
 
 def test_python_release_workflow_import_smokes_built_wheels_per_os() -> None:
@@ -111,6 +116,9 @@ def test_smoke_scripts_support_keep_temp_for_manual_qa_artifacts() -> None:
 
 def test_release_preflight_has_expected_version_negative_path() -> None:
     script = read("scripts/ci/release_preflight.py")
+    assert "GITHUB_REF_TYPE" in script
+    assert "GITHUB_REF_NAME" in script
+    assert "release tag does not contain a semver version" in script
     assert "--expected-version" in script
     assert "version mismatch" in script
 

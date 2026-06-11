@@ -1,6 +1,6 @@
 {
   "name": "@nomadamas/agentdir",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Virtual file tree infrastructure for agent-ready file layouts using CoW reflinks",
   "main": "index.js",
   "types": "index.d.ts",

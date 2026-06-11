@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
-import tomllib
 from pathlib import Path
 
+import tomllib
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -43,7 +44,9 @@ def assert_all_versions_match() -> str:
     node_lock = json.loads((ROOT / "bindings/node/package-lock.json").read_text(encoding="utf-8"))
     versions["bindings/node/package.json"] = str(node_package["version"])
     versions["bindings/node/package-lock.json"] = str(node_lock["version"])
-    versions["bindings/node/package-lock.json packages[\"\"]"] = str(node_lock["packages"][""]["version"])
+    versions['bindings/node/package-lock.json packages[""]'] = str(
+        node_lock["packages"][""]["version"]
+    )
     uv_lock = (ROOT / "bindings/python/uv.lock").read_text(encoding="utf-8")
     uv_match = re.search(r'name = "agentdir"\nversion = "([^"]+)"', uv_lock)
     if uv_match is None:
@@ -52,12 +55,26 @@ def assert_all_versions_match() -> str:
     loader = (ROOT / "bindings/node/index.js").read_text(encoding="utf-8")
     loader_versions = set(re.findall(r"expected ([0-9]+\.[0-9]+\.[0-9]+) but got", loader))
     if len(loader_versions) != 1:
-        raise AssertionError(f"bindings/node/index.js has inconsistent generated versions: {loader_versions}")
+        raise AssertionError(
+            f"bindings/node/index.js has inconsistent generated versions: {loader_versions}"
+        )
     versions["bindings/node/index.js"] = next(iter(loader_versions))
     if len(set(versions.values())) != 1:
         details = "\n".join(f"{path}: {version}" for path, version in sorted(versions.items()))
         raise AssertionError(f"release versions are not synchronized:\n{details}")
     return next(iter(versions.values()))
+
+
+def expected_version_from_tag_env() -> str | None:
+    if os.environ.get("GITHUB_REF_TYPE") != "tag":
+        return None
+    ref_name = os.environ.get("GITHUB_REF_NAME", "")
+    if not ref_name.startswith("v"):
+        raise AssertionError(f"release tag must start with 'v': {ref_name}")
+    version = ref_name[1:]
+    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
+        raise AssertionError(f"release tag does not contain a semver version: {ref_name}")
+    return version
 
 
 def run_packaging_checks() -> None:
@@ -84,8 +101,9 @@ def main() -> int:
     parser.add_argument("--expected-version")
     args = parser.parse_args()
     version = assert_all_versions_match()
-    if args.expected_version is not None and version != args.expected_version:
-        raise AssertionError(f"version mismatch: expected {args.expected_version}, found {version}")
+    expected_version = args.expected_version or expected_version_from_tag_env()
+    if expected_version is not None and version != expected_version:
+        raise AssertionError(f"version mismatch: expected {expected_version}, found {version}")
     if not args.metadata_only:
         run_packaging_checks()
     print(f"Release metadata preflight passed: version {version}")
@@ -97,4 +115,4 @@ if __name__ == "__main__":
         raise SystemExit(main())
     except AssertionError as error:
         print(f"Release metadata preflight failed: {error}", file=sys.stderr)
-        raise SystemExit(1)
+        raise SystemExit(1) from None
