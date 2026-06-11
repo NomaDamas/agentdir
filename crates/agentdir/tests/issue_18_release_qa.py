@@ -15,6 +15,8 @@ def read(path: str) -> str:
 
 def test_ci_runs_rust_workspace_tests_on_linux_macos_windows() -> None:
     workflow = read(".github/workflows/ci.yml")
+    assert "branches: [main]" in workflow
+    assert "branches: [master]" not in workflow
     assert "os: [ubuntu-latest, macos-latest, windows-latest]" in workflow
     assert re.search(r"runs-on:\s*\$\{\{\s*matrix\.os\s*\}\}", workflow)
     assert "cargo test --workspace" in workflow
