@@ -2,16 +2,32 @@
 
 **Rust-built virtual file tree infrastructure for agent-ready file layouts across macOS, Linux, and Windows**
 
+[English](README.md) | [한국어](README.ko.md)
+
 [![crates.io](https://img.shields.io/crates/v/agentdir)](https://crates.io/crates/agentdir)
 [![PyPI](https://img.shields.io/pypi/v/agentdir)](https://pypi.org/project/agentdir/)
 [![npm](https://img.shields.io/npm/v/@nomadamas/agentdir)](https://www.npmjs.com/package/@nomadamas/agentdir)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-agentdir lets your tools present the same original files in purpose-built, read-only folder structures without moving the originals. AI agents, scripts, and humans can navigate documents, media, datasets, generated artifacts, plain text, binaries, or any other OS-visible files through a layout optimized for the task at hand.
+agentdir lets tools present the same original files through purpose-built, read-only folder structures without moving the originals. AI agents, scripts, and humans can navigate documents, media, datasets, generated artifacts, plain text, binaries, or any other OS-visible files through a layout optimized for the task at hand.
 
 Built in Rust, agentdir runs on macOS, Linux, and Windows. On CoW-capable filesystems such as APFS, Btrfs, and XFS, alternate layouts and snapshots use reflinks, so large files do not get duplicated just because the folder structure changes. When CoW is unavailable, agentdir falls back to byte-copy materialization.
 
 The point is simple: keep the human-facing file layout stable, give agents a better working layout, and keep the two mapped together as original files change.
+
+---
+
+## Contents
+
+- [Why agentdir](#why-agentdir)
+- [Install](#install)
+- [Quick start](#quick-start)
+- [Keep the View Synced](#keep-the-view-synced)
+- [Core Concepts](#core-concepts)
+- [Command Reference](#command-reference)
+- [Library Usage](#library-usage)
+- [How It Works](#how-it-works)
+- [Non-Goals](#non-goals)
 
 ---
 
@@ -25,20 +41,7 @@ The point is simple: keep the human-facing file layout stable, give agents a bet
 
 ---
 
-## Features
-
-- **Virtual namespace** — map source directories into a virtual tree at arbitrary mount points, then move, copy, and rename entries without touching the originals
-- **CoW materialization** — files are cloned via reflinks on APFS (macOS) and Btrfs/XFS (Linux); falls back to byte-copy on NTFS (Windows)
-- **Accurate change tracking** — detects additions, modifications, and deletions in source directories via metadata (mtime + size) and propagates them to the virtual tree automatically
-- **Multiple materialization strategies** — `reflink` (default), `symlink`, `virtual`
-- **Snapshot support** — CoW forks of the workspace for isolated concurrent workspaces
-- **File-format-agnostic** — works with any file the OS can stat: documents, spreadsheets, presentations, PDFs, images, media, datasets, plain text, binaries, and more
-- **Cross-platform** — macOS, Linux, Windows; virtual paths always use `/` internally regardless of host OS
-- **Three distribution channels** — Rust library, Python bindings (PyO3), Node.js bindings (NAPI-RS)
-
----
-
-## Installation
+## Install
 
 ### Rust
 
@@ -82,9 +85,34 @@ Prebuilt binaries are available for:
 
 ---
 
+## Quick start
+
+```sh
+# Initialize a new workspace
+agentdir init ./workspace
+
+# Map a source directory into the virtual tree
+agentdir -w ./workspace map ./team-files /files
+
+# Keep the virtual tree current while agents consume it
+agentdir -w ./workspace watch --interval 60
+
+# Check workspace status
+agentdir -w ./workspace status
+
+# Move an entry in the virtual namespace
+# Original files are untouched.
+agentdir -w ./workspace mv /files/q1-report.pdf /reports/q1-report.pdf
+
+# Refresh once instead of running a watcher
+agentdir -w ./workspace refresh
+```
+
+---
+
 ## Keep the View Synced
 
-Installation only installs the library or CLI. After you map original files, you should also choose how the workspace will stay current. This is not a nice-to-have: the virtual tree is a live navigation view, and original-file changes are propagated only when you run reconciliation.
+Installation only installs the library or CLI. After you map original files, you should also choose how the workspace will stay current. The virtual tree is a live navigation view, and original-file changes are propagated only when you run reconciliation.
 
 For CLI-driven work, run the watcher next to the agent or script that consumes the workspace:
 
@@ -104,30 +132,32 @@ Library users should do the same through their runtime surface: call `Workspace.
 
 ---
 
-## CLI Usage
+## Core Concepts
+
+| Concept | What it means |
+|---------|---------------|
+| Virtual namespace | A task-specific tree mapped from one or more source directories |
+| Read-only materialized view | Files in the virtual tree are for navigation; edit the original source path instead |
+| CoW materialization | APFS, Btrfs, and XFS can clone file data without duplicating large files |
+| Reconciliation | `watch` or `refresh` detects source changes and updates the virtual tree |
+| Snapshots | Isolated CoW forks of a workspace for concurrent work |
+
+## Features
+
+- **Virtual namespace** — map source directories into a virtual tree at arbitrary mount points, then move, copy, and rename entries without touching the originals
+- **CoW materialization** — files are cloned via reflinks on APFS (macOS) and Btrfs/XFS (Linux); falls back to byte-copy on NTFS (Windows)
+- **Accurate change tracking** — detects additions, modifications, and deletions in source directories via metadata (mtime + size) and propagates them to the virtual tree automatically
+- **Multiple materialization strategies** — `reflink` (default), `symlink`, `virtual`
+- **Snapshot support** — CoW forks of the workspace for isolated concurrent workspaces
+- **File-format-agnostic** — works with any file the OS can stat: documents, spreadsheets, presentations, PDFs, images, media, datasets, plain text, binaries, and more
+- **Cross-platform** — macOS, Linux, Windows; virtual paths always use `/` internally regardless of host OS
+- **Three distribution channels** — Rust library, Python bindings (PyO3), Node.js bindings (NAPI-RS)
+
+---
+
+## Command Reference
 
 The binary is named `agentdir`. Most commands accept a `-w`/`--workspace <dir>` flag to specify the workspace directory; if omitted, the current directory is used.
-
-### Quick start
-
-```sh
-# Initialize a new workspace
-agentdir init ./workspace
-
-# Map a source directory into the virtual tree
-agentdir -w ./workspace map ./team-files /files
-
-# Keep the virtual tree current while agents consume it
-agentdir -w ./workspace watch --interval 60
-
-# Check workspace status
-agentdir -w ./workspace status
-
-# Move an entry in the virtual namespace (original files are untouched)
-agentdir -w ./workspace mv /files/q1-report.pdf /reports/q1-report.pdf
-```
-
-### Command reference
 
 | Command | Description |
 |---------|-------------|
