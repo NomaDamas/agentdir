@@ -1,0 +1,64 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Checking agentdir v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/crates/agentdir)
+   Compiling agentdir-node v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/bindings/node)
+   Compiling pyo3-build-config v0.23.5
+    Checking agentdir-cli v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/crates/agentdir-cli)
+error: length comparison to zero
+   --> crates/agentdir/tests/integration.rs:167:13
+    |
+167 |     assert!(ws.catalog.len() > 0);
+    |             ^^^^^^^^^^^^^^^^^^^^ help: using `!is_empty` is clearer and more explicit: `!ws.catalog.is_empty()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#len_zero
+    = note: `-D clippy::len-zero` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::len_zero)]`
+
+error: could not compile `agentdir` (test "integration") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: length comparison to zero
+  --> crates/agentdir/tests/edge_fs.rs:36:54
+   |
+36 |     assert!(ws.catalog.get(&vp("/empty")).is_ok() || ws.catalog.len() == 0);
+   |                                                      ^^^^^^^^^^^^^^^^^^^^^ help: using `is_empty` is clearer and more explicit: `ws.catalog.is_empty()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#len_zero
+   = note: `-D clippy::len-zero` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::len_zero)]`
+
+error: could not compile `agentdir` (test "edge_fs") due to 1 previous error
+error: items after a test module
+   --> crates/agentdir/src/workspace.rs:607:1
+    |
+607 |   mod tests {
+    |   ^^^^^^^^^
+...
+774 |   fn validate_absolute_virtual_path(path: &VirtualPath, label: &str) -> Result<()> {
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+783 |   fn validate_new_name(new_name: &str) -> Result<()> {
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+797 | / fn rebase_virtual_path(
+798 | |     path: &VirtualPath,
+799 | |     from: &VirtualPath,
+800 | |     to: &VirtualPath,
+801 | | ) -> Result<VirtualPath> {
+    | |________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#items_after_test_module
+    = note: `-D clippy::items-after-test-module` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::items_after_test_module)]`
+    = help: move the items to before the test module was defined
+
+error: length comparison to zero
+   --> crates/agentdir/src/workspace.rs:668:17
+    |
+668 |         assert!(ws.catalog.len() > 0);
+    |                 ^^^^^^^^^^^^^^^^^^^^ help: using `!is_empty` is clearer and more explicit: `!ws.catalog.is_empty()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#len_zero
+    = note: `-D clippy::len-zero` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::len_zero)]`
+
+error: could not compile `agentdir` (lib test) due to 2 previous errors

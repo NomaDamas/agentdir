@@ -1,0 +1,29 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
+     Running tests/editor_autosave.rs (target/debug/deps/editor_autosave-2853d46ab162a97f)
+
+running 3 tests
+test refreshes_existing_mapping_when_atomic_save_emits_delete_then_create ... FAILED
+test refreshes_existing_mapping_when_atomic_save_emits_temp_rename_to_tracked_path ... FAILED
+test still_removes_mapping_when_editor_delete_is_not_recreated ... ok
+
+failures:
+
+---- refreshes_existing_mapping_when_atomic_save_emits_delete_then_create stdout ----
+
+thread 'refreshes_existing_mapping_when_atomic_save_emits_delete_then_create' (107143399) panicked at crates/agentdir/tests/editor_autosave.rs:49:5:
+atomic save delete/create should not preflight-fail: [(VirtualPath("/docs/note.txt"), EntryExists("/docs/note.txt"))]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- refreshes_existing_mapping_when_atomic_save_emits_temp_rename_to_tracked_path stdout ----
+
+thread 'refreshes_existing_mapping_when_atomic_save_emits_temp_rename_to_tracked_path' (107143400) panicked at crates/agentdir/tests/editor_autosave.rs:81:5:
+temp rename into tracked path should not duplicate-add: [(VirtualPath("/docs/note.txt"), EntryExists("/docs/note.txt"))]
+
+
+failures:
+    refreshes_existing_mapping_when_atomic_save_emits_delete_then_create
+    refreshes_existing_mapping_when_atomic_save_emits_temp_rename_to_tracked_path
+
+test result: FAILED. 1 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+error: test failed, to rerun pass `-p agentdir --test editor_autosave`

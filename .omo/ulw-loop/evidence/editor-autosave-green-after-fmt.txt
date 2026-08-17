@@ -1,0 +1,12 @@
+   Compiling agentdir v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/crates/agentdir)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+     Running tests/editor_autosave.rs (target/debug/deps/editor_autosave-2853d46ab162a97f)
+
+running 4 tests
+test still_removes_mapping_when_editor_delete_is_not_recreated ... ok
+test refreshes_existing_mapping_when_atomic_save_emits_delete_then_create ... ok
+test ignores_transient_temp_create_when_atomic_save_renames_it_to_tracked_path ... ok
+test refreshes_existing_mapping_when_atomic_save_emits_temp_rename_to_tracked_path ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+

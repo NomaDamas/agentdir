@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "createdAt": "2026-06-05T03:35:42.553Z",
+  "updatedAt": "2026-06-05T03:58:09.948Z",
+  "briefPath": ".omo/ulw-loop/019e95d7-f935-7281-b781-aa94657da916/brief.md",
+  "goalsPath": ".omo/ulw-loop/019e95d7-f935-7281-b781-aa94657da916/goals.json",
+  "ledgerPath": ".omo/ulw-loop/019e95d7-f935-7281-b781-aa94657da916/ledger.jsonl",
+  "codexGoalMode": "aggregate",
+  "goals": [
+    {
+      "id": "G001-fix-modern-editor-autosave-bugs-in-a",
+      "title": "Fix modern editor autosave bugs in agentdir/MinSync in isolated workt...",
+      "objective": "Fix modern editor autosave bugs in agentdir/MinSync in isolated worktree branch fix/editor-autosave-sync. Deliver TDD RED->GREEN tests, manual CLI/tmux QA evidence, and commit.",
+      "status": "blocked",
+      "successCriteria": [
+        {
+          "id": "C001",
+          "scenario": "happy path for: Fix modern editor autosave bugs in agentdir/MinSync in isolated worktree bran...",
+          "userModel": "happy",
+          "expectedEvidence": "Replace via revise_criterion with observable happy-path proof for goal 1.",
+          "capturedEvidence": "final2 tmux manual QA PASS: .omo/ulw-loop/evidence/autosave-cli-watch-tmux-final2.txt shows target/debug/agentdir watch -i 1 refreshed original and copied alias after atomic temp rename; RED->GREEN includes .omo/ulw-loop/evidence/editor-autosave-red-aliases.txt, .omo/ulw-loop/evidence/editor-autosave-red-stale-modify-delete.txt, .omo/ulw-loop/evidence/editor-autosave-green-stale-modify-delete.txt; cleanup: .omo/ulw-loop/evidence/autosave-cli-watch-cleanup-final2.txt",
+          "status": "pass",
+          "capturedAt": "2026-06-05T03:55:26.763Z"
+        },
+        {
+          "id": "C002",
+          "scenario": "edge case (boundary/empty/malformed)",
+          "userModel": "edge",
+          "expectedEvidence": "Replace via revise_criterion with boundary or malformed-input proof for: Fix modern editor autosave bugs in agentdir/MinSync in isolated worktree bran....",
+          "capturedEvidence": "edge event proof: transient temp create + rename and stale create + delete covered by crates/agentdir/tests/editor_autosave.rs; RED: .omo/ulw-loop/evidence/editor-autosave-red-v2.txt and .omo/ulw-loop/evidence/editor-autosave-red-stale-create-delete.txt; GREEN: .omo/ulw-loop/evidence/editor-autosave-green-final2.txt; cleanup: no runtime resources spawned by unit tests",
+          "status": "pass",
+          "capturedAt": "2026-06-05T03:45:28.913Z"
+        },
+        {
+          "id": "C003",
+          "scenario": "regression: adjacent surface still works",
+          "userModel": "regression",
+          "expectedEvidence": "Replace via revise_criterion with regression proof for neighboring behavior after: Fix modern editor autosave bugs in agentdir/MinSync in isolated worktree bran....",
+          "capturedEvidence": "final2 regression proof: cargo fmt --check passed in .omo/ulw-loop/evidence/cargo-fmt-check-final-review2.txt; cargo clippy --workspace --all-targets --all-features -- -D warnings passed in .omo/ulw-loop/evidence/cargo-clippy-final-review2.txt; cargo test --workspace passed in .omo/ulw-loop/evidence/cargo-test-workspace-final-review2.txt; cleanup: no QA process left",
+          "status": "pass",
+          "capturedAt": "2026-06-05T03:55:26.826Z"
+        }
+      ],
+      "attempt": 1,
+      "createdAt": "2026-06-05T03:35:42.553Z",
+      "updatedAt": "2026-06-05T03:58:09.948Z",
+      "startedAt": "2026-06-05T03:45:03.048Z",
+      "blockedReason": "Implementation complete and committed as 60727de; all criteria pass and final reviewer approved, but ULW complete checkpoint rejected because Codex goal objective was created before ULW aggregate objective and does not match CLI-generated codexObjective."
+    }
+  ],
+  "codexObjective": "Complete the durable ulw-loop plan in .omo/ulw-loop/019e95d7-f935-7281-b781-aa94657da916/goals.json, including later accepted/appended stories, under the original brief constraints; use .omo/ulw-loop/019e95d7-f935-7281-b781-aa94657da916/ledger.jsonl as the audit trail."
+}

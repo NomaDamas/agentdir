@@ -1,0 +1,29 @@
+QA_ROOT=/var/folders/8w/_x12f_056yv_z1x45vr_f2cm0000gp/T//agentdir-autosave-qa-f
+inal.vyfc3V
+SRC=/var/folders/8w/_x12f_056yv_z1x45vr_f2cm0000gp/T//agentdir-autosave-qa-final
+.vyfc3V/source
+WS=/var/folders/8w/_x12f_056yv_z1x45vr_f2cm0000gp/T//agentdir-autosave-qa-final.
+vyfc3V/workspace
+Initialized workspace at /var/folders/8w/_x12f_056yv_z1x45vr_f2cm0000gp/T//agent
+dir-autosave-qa-final.vyfc3V/workspace (strategy: reflink)
+Manifest: /var/folders/8w/_x12f_056yv_z1x45vr_f2cm0000gp/T//agentdir-autosave-qa
+-final.vyfc3V/workspace/.agentdir/manifest.json
+Mapped: 2 entries added (1 reflinked, 0 copied, 0 symlinked, 1 dirs)
+Copied /docs/note.txt -> /copies/note.txt
+WATCH_PID=81630
+Watching 1 source roots. Press Ctrl+C to stop.
+Synced: +0 added, ~2 refreshed, -0 removed
+Synced: +0 added, ~3 refreshed, -0 removed
+MATERIALIZED_DOCS=after atomic autosave final
+MATERIALIZED_COPY=after atomic autosave final
+MATERIALIZED_TREE
+/var/folders/8w/_x12f_056yv_z1x45vr_f2cm0000gp/T//agentdir-autosave-qa-final.vyf
+c3V/workspace/.agentdir/manifest.json
+/var/folders/8w/_x12f_056yv_z1x45vr_f2cm0000gp/T//agentdir-autosave-qa-final.vyf
+c3V/workspace/copies/note.txt
+/var/folders/8w/_x12f_056yv_z1x45vr_f2cm0000gp/T//agentdir-autosave-qa-final.vyf
+c3V/workspace/docs/note.txt
+QA_PASS atomic-save-watch-updated-all-aliases
+CLEANUP watch_pid_terminated=81630
+READY_FOR_CAPTURE
+

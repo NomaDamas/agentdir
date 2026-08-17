@@ -1,0 +1,175 @@
+    Blocking waiting for file lock on build directory
+    Checking cfg-if v1.0.4
+    Checking memchr v2.8.0
+    Checking pin-project-lite v0.2.17
+    Checking futures-sink v0.3.32
+    Checking once_cell v1.21.4
+    Checking bitflags v2.11.1
+    Checking smallvec v1.15.1
+    Checking futures-core v0.3.32
+    Checking slab v0.4.12
+    Checking futures-io v0.3.32
+    Checking log v0.4.29
+    Checking libc v0.2.186
+    Checking typenum v1.20.0
+    Checking futures-task v0.3.32
+    Checking scopeguard v1.2.0
+    Checking regex-syntax v0.8.10
+    Checking serde_core v1.0.228
+    Checking same-file v1.0.6
+    Checking bytes v1.11.1
+    Checking futures-channel v0.3.32
+    Checking lock_api v0.4.14
+    Checking zmij v1.0.21
+    Checking itoa v1.0.18
+    Checking notify-types v2.1.0
+    Checking lazy_static v1.5.0
+    Checking thread_local v1.1.9
+    Checking tracing-core v0.1.36
+    Checking file-id v0.2.3
+    Checking walkdir v2.5.0
+    Checking aho-corasick v1.1.4
+    Checking sharded-slab v0.1.7
+    Checking bstr v1.12.1
+    Checking nu-ansi-term v0.50.3
+    Checking thiserror v2.0.18
+    Checking reflink-copy v0.1.29
+    Checking fastrand v2.4.1
+    Checking futures-util v0.3.32
+    Checking utf8parse v0.2.2
+    Checking colorchoice v1.0.5
+    Checking is_terminal_polyfill v1.70.2
+    Checking anstyle-parse v1.0.0
+    Checking anstyle v1.0.14
+    Checking anstyle-query v1.1.5
+   Compiling pyo3-build-config v0.23.5
+    Checking libloading v0.9.0
+    Checking clap_lex v1.1.0
+    Checking strsim v0.11.1
+    Checking tracing v0.1.44
+    Checking tracing-log v0.2.0
+    Checking napi-sys v3.2.1
+    Checking anstream v1.0.0
+    Checking memoffset v0.9.1
+    Checking errno v0.3.14
+    Checking parking_lot_core v0.9.12
+    Checking mio v1.2.0
+    Checking socket2 v0.6.3
+    Checking fsevent-sys v4.1.0
+    Checking cpufeatures v0.2.17
+    Checking getrandom v0.4.2
+    Checking signal-hook-registry v1.4.8
+    Checking rustix v1.1.4
+    Checking notify v8.2.0
+    Checking clap_builder v4.6.0
+   Compiling agentdir-node v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/bindings/node)
+   Compiling ctor v1.0.6
+    Checking parking_lot v0.12.5
+    Checking rustc-hash v2.1.2
+    Checking unindent v0.2.4
+    Checking nohash-hasher v0.2.0
+    Checking generic-array v0.14.7
+    Checking notify-debouncer-full v0.5.0
+    Checking tokio v1.52.3
+   Compiling napi-derive v3.5.6
+    Checking regex-automata v0.4.14
+   Compiling pyo3-ffi v0.23.5
+   Compiling pyo3-macros-backend v0.23.5
+   Compiling pyo3 v0.23.5
+    Checking crypto-common v0.1.7
+    Checking block-buffer v0.10.4
+    Checking tempfile v3.27.0
+    Checking digest v0.10.7
+    Checking sha2 v0.10.9
+    Checking clap v4.6.1
+    Checking serde v1.0.228
+    Checking serde_json v1.0.150
+    Checking futures-executor v0.3.32
+    Checking futures v0.3.32
+    Checking matchers v0.2.0
+    Checking globset v0.4.18
+    Checking tracing-subscriber v0.3.23
+    Checking tokio-util v0.7.18
+    Checking napi v3.9.0
+    Checking agentdir v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/crates/agentdir)
+error: called `map(..).flatten()` on `Iterator`
+  --> crates/agentdir/tests/editor_autosave.rs:40:10
+   |
+40 |           .map(|event| Reconciler::from_event(&ws.catalog, event).unwrap())
+   |  __________^
+41 | |         .flatten()
+   | |__________________^ help: try replacing `map` with `flat_map` and remove the `.flatten()`: `flat_map(|event| Reconciler::from_event(&ws.catalog, event).unwrap())`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#map_flatten
+   = note: `-D clippy::map-flatten` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::map_flatten)]`
+
+error: called `map(..).flatten()` on `Iterator`
+   --> crates/agentdir/tests/editor_autosave.rs:113:10
+    |
+113 |           .map(|event| Reconciler::from_event(&ws.catalog, event).unwrap())
+    |  __________^
+114 | |         .flatten()
+    | |__________________^ help: try replacing `map` with `flat_map` and remove the `.flatten()`: `flat_map(|event| Reconciler::from_event(&ws.catalog, event).unwrap())`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#map_flatten
+
+error: called `map(..).flatten()` on `Iterator`
+   --> crates/agentdir/tests/editor_autosave.rs:172:10
+    |
+172 |           .map(|event| Reconciler::from_event(&ws.catalog, event).unwrap())
+    |  __________^
+173 | |         .flatten()
+    | |__________________^ help: try replacing `map` with `flat_map` and remove the `.flatten()`: `flat_map(|event| Reconciler::from_event(&ws.catalog, event).unwrap())`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#map_flatten
+
+error: items after a test module
+   --> crates/agentdir/src/workspace.rs:607:1
+    |
+607 |   mod tests {
+    |   ^^^^^^^^^
+...
+774 |   fn validate_absolute_virtual_path(path: &VirtualPath, label: &str) -> Result<()> {
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+783 |   fn validate_new_name(new_name: &str) -> Result<()> {
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+797 | / fn rebase_virtual_path(
+798 | |     path: &VirtualPath,
+799 | |     from: &VirtualPath,
+800 | |     to: &VirtualPath,
+801 | | ) -> Result<VirtualPath> {
+    | |________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#items_after_test_module
+    = note: `-D clippy::items-after-test-module` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::items_after_test_module)]`
+    = help: move the items to before the test module was defined
+
+error: length comparison to zero
+   --> crates/agentdir/src/workspace.rs:668:17
+    |
+668 |         assert!(ws.catalog.len() > 0);
+    |                 ^^^^^^^^^^^^^^^^^^^^ help: using `!is_empty` is clearer and more explicit: `!ws.catalog.is_empty()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#len_zero
+    = note: `-D clippy::len-zero` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::len_zero)]`
+
+    Checking agentdir-cli v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/crates/agentdir-cli)
+error: could not compile `agentdir` (test "editor_autosave") due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `agentdir` (lib test) due to 2 previous errors
+error: length comparison to zero
+   --> crates/agentdir/tests/integration.rs:167:13
+    |
+167 |     assert!(ws.catalog.len() > 0);
+    |             ^^^^^^^^^^^^^^^^^^^^ help: using `!is_empty` is clearer and more explicit: `!ws.catalog.is_empty()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#len_zero
+    = note: `-D clippy::len-zero` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::len_zero)]`
+
+error: could not compile `agentdir` (test "integration") due to 1 previous error

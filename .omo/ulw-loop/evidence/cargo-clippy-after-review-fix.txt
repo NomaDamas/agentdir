@@ -1,0 +1,48 @@
+    Blocking waiting for file lock on build directory
+    Checking libc v0.2.186
+    Checking generic-array v0.14.7
+    Checking serde_core v1.0.228
+    Checking zmij v1.0.21
+   Compiling once_cell v1.21.4
+    Checking futures-util v0.3.32
+    Checking tracing v0.1.44
+    Checking thiserror v2.0.18
+    Checking memoffset v0.9.1
+   Compiling agentdir-node v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/bindings/node)
+   Compiling ctor v1.0.6
+    Checking clap v4.6.1
+   Compiling napi-derive v3.5.6
+   Compiling pyo3-build-config v0.23.5
+    Checking tracing-subscriber v0.3.23
+    Checking crypto-common v0.1.7
+    Checking block-buffer v0.10.4
+    Checking errno v0.3.14
+    Checking parking_lot_core v0.9.12
+    Checking mio v1.2.0
+    Checking socket2 v0.6.3
+    Checking fsevent-sys v4.1.0
+    Checking cpufeatures v0.2.17
+    Checking getrandom v0.4.2
+   Compiling pyo3-ffi v0.23.5
+   Compiling pyo3-macros-backend v0.23.5
+   Compiling pyo3 v0.23.5
+    Checking digest v0.10.7
+    Checking notify v8.2.0
+    Checking signal-hook-registry v1.4.8
+    Checking rustix v1.1.4
+    Checking parking_lot v0.12.5
+    Checking sha2 v0.10.9
+    Checking tokio v1.52.3
+    Checking notify-debouncer-full v0.5.0
+    Checking tempfile v3.27.0
+    Checking serde v1.0.228
+    Checking serde_json v1.0.150
+    Checking futures-executor v0.3.32
+    Checking futures v0.3.32
+   Compiling pyo3-macros v0.23.5
+    Checking tokio-util v0.7.18
+    Checking napi v3.9.0
+    Checking agentdir v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/crates/agentdir)
+    Checking agentdir-cli v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/crates/agentdir-cli)
+    Checking agentdir-python v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/bindings/python)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 15.19s

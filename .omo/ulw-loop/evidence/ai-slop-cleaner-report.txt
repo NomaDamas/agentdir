@@ -1,0 +1,3 @@
+AI slop cleaner scope: staged diff files.
+Result: no production slop cleanup applied beyond required lint cleanup; BDD comments in tests kept per TDD rule; oversized pre-existing Rust modules noted but not split because that is outside autosave bug scope.
+Verification after cleaner no-op: cargo fmt --check, cargo clippy --workspace --all-targets --all-features -- -D warnings, cargo test --workspace all pass.

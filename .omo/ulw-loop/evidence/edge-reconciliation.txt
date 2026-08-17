@@ -1,0 +1,24 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling agentdir v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/crates/agentdir)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.75s
+     Running tests/edge_reconciliation.rs (target/debug/deps/edge_reconciliation-43974fbef59d1826)
+
+running 13 tests
+test test_refresh_detects_mtime_change ... ok
+test test_new_subdirectory_with_files_detected ... ok
+test test_refresh_detects_content_change ... ok
+test test_refresh_detects_new_file ... ok
+test test_refresh_no_changes_returns_zero_counts ... ok
+test test_refresh_detects_deleted_file ... ok
+test test_refresh_preserves_virtual_only_directories ... ok
+test test_refresh_multiple_changes_simultaneously ... ok
+test test_source_replaced_with_different_content ... ok
+test test_refresh_after_unmap_ignores_old_root ... ok
+test test_refresh_cp_updates_all_copies ... ok
+test test_double_refresh_is_idempotent ... ok
+test test_rapid_source_modifications ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+

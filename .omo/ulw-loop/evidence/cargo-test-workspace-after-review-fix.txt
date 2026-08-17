@@ -1,0 +1,371 @@
+   Compiling syn v2.0.117
+   Compiling serde_json v1.0.150
+   Compiling target-lexicon v0.12.16
+   Compiling heck v0.5.0
+   Compiling napi-build v2.3.2
+   Compiling autocfg v1.5.1
+   Compiling unicode-segmentation v1.13.2
+   Compiling semver v1.0.28
+   Compiling indoc v2.0.7
+   Compiling napi v3.9.0
+   Compiling agentdir-node v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/bindings/node)
+   Compiling memoffset v0.9.1
+   Compiling convert_case v0.11.0
+   Compiling pyo3-build-config v0.23.5
+   Compiling napi-derive-backend v5.0.4
+   Compiling futures-macro v0.3.32
+   Compiling tokio-macros v2.7.0
+   Compiling tracing-attributes v0.1.31
+   Compiling serde_derive v1.0.228
+   Compiling thiserror-impl v2.0.18
+   Compiling async-trait v0.1.89
+   Compiling clap_derive v4.6.1
+   Compiling tokio v1.52.3
+   Compiling futures-util v0.3.32
+   Compiling tracing v0.1.44
+   Compiling thiserror v2.0.18
+   Compiling clap v4.6.1
+   Compiling napi-derive v3.5.6
+   Compiling serde v1.0.228
+   Compiling pyo3-ffi v0.23.5
+   Compiling pyo3-macros-backend v0.23.5
+   Compiling pyo3 v0.23.5
+   Compiling tracing-subscriber v0.3.23
+   Compiling futures-executor v0.3.32
+   Compiling futures v0.3.32
+   Compiling tokio-util v0.7.18
+   Compiling agentdir v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/crates/agentdir)
+   Compiling agentdir-cli v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/crates/agentdir-cli)
+   Compiling pyo3-macros v0.23.5
+   Compiling agentdir-python v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/bindings/python)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.24s
+     Running unittests src/lib.rs (target/debug/deps/agentdir-4a632dabf53f1e0b)
+
+running 63 tests
+test backend::tests::test_local_backend_implements_trait ... ok
+test catalog::tests::test_resolve_returns_source ... ok
+test catalog::tests::test_rmdir_fails_if_not_empty ... ok
+test catalog::tests::test_unmap_removes_entries ... ok
+test catalog::tests::test_cp_same_source ... ok
+test backend::tests::test_watch_handle_cancels_on_drop ... ok
+test catalog::tests::test_entry_index_consistency_after_mv ... ok
+test manifest::tests::test_ensure_workspace_dir_creates_dir ... ok
+test catalog::tests::test_mkdir_and_rmdir ... ok
+test catalog::tests::test_add_entries_and_list ... ok
+test catalog::tests::test_mv_preserves_source ... ok
+test catalog::tests::test_overlap_rejection ... ok
+test manifest::tests::test_load_nonexistent_file ... ok
+test manifest::tests::test_manifest_path ... ok
+test backend::local::tests::test_metadata_returns_correct_size ... ok
+test backend::local::tests::test_scan_empty_directory ... ok
+test backend::local::tests::test_read_bytes_returns_content ... ok
+test materializer::tests::test_dematerialize_removes_file ... ok
+test backend::local::tests::test_scan_directory ... ok
+test manifest::tests::test_no_tmp_file_after_save ... ok
+test manifest::tests::test_reject_unknown_version ... ok
+test manifest::tests::test_save_load_roundtrip ... ok
+test materializer::tests::test_materialize_creates_parent_dirs ... ok
+test materializer::tests::test_batch_partial_failure ... ok
+test reconciler::tests::test_from_event_modified_produces_refresh ... ok
+test materializer::tests::test_materialize_file_content ... ok
+test materializer::tests::test_materialize_all_dirs_before_files ... ok
+test reconciler::tests::test_apply_actions_add_creates_file ... ok
+test reconciler::tests::test_from_event_created_produces_add ... ok
+test reconciler::tests::test_from_event_modified_refreshes_all_copies ... ok
+test materializer::tests::test_refresh_after_modification ... ok
+test materializer::tests::test_progress_reporter_called ... ok
+test types::tests::test_catalog_entry_roundtrip ... ok
+test reconciler::tests::test_from_event_deleted_produces_remove ... ok
+test reconciler::tests::test_full_reconcile_detects_mtime_size_change ... ok
+test reflink::tests::test_clone_file_verified_wrong_hash ... ok
+test reflink::tests::test_clone_file_basic ... ok
+test reflink::tests::test_clone_file_verified_correct_hash ... ok
+test tests::test_version_not_empty ... ok
+test types::tests::test_content_hash_display ... ok
+test types::tests::test_manifest_version_field ... ok
+test types::tests::test_virtual_path_normalization ... ok
+test reconciler::tests::test_full_reconcile_detects_new_file ... ok
+test reflink::tests::test_clone_overwrites_existing ... ok
+test reconciler::tests::test_full_reconcile_detects_removed_file ... ok
+test workspace::tests::test_virtual_path_for_relative_empty_rel ... ok
+test workspace::tests::test_virtual_path_for_relative_normalizes_separators ... ok
+test workspace::tests::test_virtual_path_for_relative_root_mount ... ok
+test reflink::tests::test_clone_nonexistent_source ... ok
+test reconciler::tests::test_full_reconcile_refreshes_all_copies ... ok
+test reflink::tests::test_compute_hash ... ok
+test reflink::tests::test_clone_creates_parents ... ok
+test watcher::tests::test_watcher_cleanup ... ok
+test workspace::tests::test_init_creates_workspace ... ok
+test workspace::tests::test_mv_updates_virtual_path ... ok
+test workspace::tests::test_init_map_verify ... ok
+test workspace::tests::test_persist_reload ... ok
+test workspace::tests::test_unmap_removes_entries ... ok
+test workspace::tests::test_refresh_source_modification ... ok
+test materializer::tests::test_batch_materialize_100 ... ok
+test watcher::tests::test_periodic_polling_emits_rescan ... ok
+test watcher::tests::test_start_waits_until_roots_are_watched ... ok
+test watcher::tests::test_detect_file_creation ... ok
+
+test result: ok. 63 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.94s
+
+     Running tests/batch_map.rs (target/debug/deps/batch_map-ab5d8f97233dab58)
+
+running 12 tests
+test test_batch_map_empty_vec ... ok
+test test_batch_map_rejects_nonexistent_source ... ok
+test test_batch_map_rejects_relative_virtual_path ... ok
+test test_batch_map_rejects_directory_source ... ok
+test test_batch_map_rejects_duplicate_virtual ... ok
+test test_batch_map_manifest_persisted ... ok
+test test_batch_map_single_file ... ok
+test test_batch_map_creates_parent_dirs ... ok
+test test_batch_map_multiple_files ... ok
+test test_batch_map_rejects_existing_virtual ... ok
+test test_batch_map_then_export ... ok
+test test_batch_map_preserves_existing_entries ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests/edge_agent_scenarios.rs (target/debug/deps/edge_agent_scenarios-fce7d1dc01624490)
+
+running 10 tests
+test test_rmdir_non_empty_without_recursive_fails ... ok
+test test_status_reflects_operations ... ok
+test test_rename_preserves_source_reference ... ok
+test test_virtual_mkdir_tree_for_organizing ... ok
+test test_cp_then_unmap_preserves_copy ... ok
+test test_map_unmap_remap_same_mount ... ok
+test test_multi_source_different_mounts ... ok
+test test_rmdir_recursive_removes_subtree ... ok
+test test_reorganize_flat_to_categorized ... ok
+test test_workspace_with_500_files_operations ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.76s
+
+     Running tests/edge_fs.rs (target/debug/deps/edge_fs-4e9b623c00de0fab)
+
+running 14 tests
+test test_binary_file_content_preserved ... ok
+test test_empty_source_directory_maps_cleanly ... ok
+test test_filename_with_unicode ... ok
+test test_zero_byte_file ... ok
+test test_filename_with_spaces ... ok
+test test_dot_files_and_dot_dirs ... ok
+test test_symlink_in_source_is_skipped ... ok
+test test_source_dir_with_only_subdirs_no_files ... ok
+test test_filename_with_special_chars ... ok
+test test_materialized_file_manually_deleted ... ok
+test test_large_file_materialization ... ok
+test test_source_directory_deleted_entirely ... ok
+test test_source_becomes_unreadable_after_map ... ok
+test test_deeply_nested_directory_tree ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+     Running tests/edge_known_issues.rs (target/debug/deps/edge_known_issues-c4683d011d7aa498)
+
+running 8 tests
+test test_virtual_path_from_pathbuf_rejects_empty - should panic ... ok
+test test_relative_virtual_path_in_map_rejected ... ok
+test test_rename_with_slash_in_new_name_rejected ... ok
+test test_map_same_source_twice_rejected ... ok
+test test_mv_directory_moves_children ... ok
+test test_remove_does_not_affect_siblings ... ok
+test test_cp_directory_copies_children ... ok
+test test_rmdir_recursive_dematerializes_children ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+     Running tests/edge_persistence.rs (target/debug/deps/edge_persistence-61369dc7d57788d0)
+
+running 10 tests
+test test_manifest_missing_file_returns_io_error ... ok
+test test_manifest_wrong_version_rejected ... ok
+test test_manifest_corrupt_json_returns_parse_error ... ok
+test test_no_tmp_file_left_after_save ... ok
+test test_persist_after_mv_then_reopen ... ok
+test test_persist_after_cp_then_reopen ... ok
+test test_manifest_roundtrip_preserves_all_fields ... ok
+test test_persist_after_map_then_reopen ... ok
+test test_persist_after_unmap_then_reopen ... ok
+test test_manifest_updated_at_advances ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.14s
+
+     Running tests/edge_reconciliation.rs (target/debug/deps/edge_reconciliation-f5e7273b6388abd3)
+
+running 13 tests
+test test_refresh_no_changes_returns_zero_counts ... ok
+test test_refresh_preserves_virtual_only_directories ... ok
+test test_refresh_detects_content_change ... ok
+test test_refresh_detects_new_file ... ok
+test test_refresh_detects_deleted_file ... ok
+test test_refresh_detects_mtime_change ... ok
+test test_new_subdirectory_with_files_detected ... ok
+test test_source_replaced_with_different_content ... ok
+test test_refresh_after_unmap_ignores_old_root ... ok
+test test_rapid_source_modifications ... ok
+test test_double_refresh_is_idempotent ... ok
+test test_refresh_multiple_changes_simultaneously ... ok
+test test_refresh_cp_updates_all_copies ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+     Running tests/edge_virtual_paths.rs (target/debug/deps/edge_virtual_paths-4dcd2784d0aab0f0)
+
+running 15 tests
+test test_virtual_path_dot_only_relative ... ok
+test test_virtual_path_empty_rejected ... ok
+test test_virtual_path_double_slashes_normalized ... ok
+test test_virtual_path_trailing_slash_stripped ... ok
+test test_virtual_path_parent_of_root ... ok
+test test_virtual_path_file_name_of_root ... ok
+test test_virtual_path_double_dot_normalization ... ok
+test test_virtual_path_root_only ... ok
+test test_virtual_path_traversal_beyond_root ... ok
+test test_rename_root_entry_rejected ... ok
+test test_mv_nonexistent_source_is_error ... ok
+test test_mkdir_duplicate_rejected ... ok
+test test_map_to_root_mount ... ok
+test test_mv_to_same_path_is_error ... ok
+test test_cp_to_existing_path_is_error ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/editor_autosave.rs (target/debug/deps/editor_autosave-c656518f73ae6e6f)
+
+running 7 tests
+test still_removes_mapping_when_stale_create_is_followed_by_delete ... ok
+test still_removes_mapping_when_editor_delete_is_not_recreated ... ok
+test ignores_transient_temp_create_when_atomic_save_renames_it_to_tracked_path ... ok
+test refreshes_existing_mapping_when_atomic_save_emits_temp_rename_to_tracked_path ... ok
+test preserves_virtual_move_when_atomic_save_replaces_source ... ok
+test refreshes_existing_mapping_when_atomic_save_emits_delete_then_create ... ok
+test refreshes_all_virtual_aliases_when_atomic_save_replaces_copied_source ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/export_mapping.rs (target/debug/deps/export_mapping-2bdd8babfa94d2bb)
+
+running 11 tests
+test test_export_empty_workspace ... ok
+test test_export_invalid_relative_to_errors ... ok
+test test_export_after_mv ... ok
+test test_export_source_to_virtual_rejects_cp_duplicates ... ok
+test test_export_directories_excluded ... ok
+test test_export_virtual_to_source_works_after_cp ... ok
+test test_export_multi_source ... ok
+test test_export_deterministic_order ... ok
+test test_export_source_to_virtual ... ok
+test test_export_relative_to ... ok
+test test_export_virtual_to_source ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+     Running tests/integration.rs (target/debug/deps/integration-75adb1ea418860a5)
+
+running 11 tests
+test test_overlap_rejection ... ok
+test test_empty_workspace_operations ... ok
+test test_new_file_auto_addition ... ok
+test test_persistence_roundtrip ... ok
+test test_ripgrep_compatibility ... ok
+test test_multi_source_mapping ... ok
+test test_virtual_operations ... ok
+test test_source_deletion_propagation ... ok
+test test_cp_refresh_sync ... ok
+test test_full_lifecycle ... ok
+test test_large_tree ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+
+     Running tests/query_apis.rs (target/debug/deps/query_apis-fd408e61b8ddef43)
+
+running 15 tests
+test test_read_bytes_returns_source_content ... ok
+test test_rglob_matches_directories ... ok
+test test_read_bytes_errors_on_directory ... ok
+test test_rglob_recursive_doublestar ... ok
+test test_rglob_no_matches ... ok
+test test_stat_returns_metadata_for_directory ... ok
+test test_rglob_star_pattern ... ok
+test test_rglob_invalid_pattern_errors ... ok
+test test_exists_returns_true_for_directory ... ok
+test test_stat_returns_metadata_for_file ... ok
+test test_read_bytes_reads_updated_source ... ok
+test test_exists_returns_true_for_mapped_file ... ok
+test test_stat_errors_on_nonexistent ... ok
+test test_read_bytes_errors_on_nonexistent ... ok
+test test_exists_returns_false_for_nonexistent ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+     Running tests/readonly_materialization.rs (target/debug/deps/readonly_materialization-cf9f9bde0beb062b)
+
+running 5 tests
+test test_legacy_hardlink_manifest_is_rejected ... ok
+test test_reflink_materialized_file_is_readonly ... ok
+test test_source_stays_writable_after_materialize ... ok
+test test_unmap_succeeds_on_readonly_materialized ... ok
+test test_refresh_succeeds_on_readonly_materialized ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/snapshot.rs (target/debug/deps/snapshot-08942835e216c156)
+
+running 12 tests
+test test_snapshot_export_relative_to_normalizes_separators ... ok
+test test_destroy_does_not_affect_base ... ok
+test test_snapshot_duplicate_name_rejected ... ok
+test test_snapshot_creation ... ok
+test test_snapshot_reads_base_files ... ok
+test test_snapshot_destroy ... ok
+test test_destroy_snapshot_via_workspace ... ok
+test test_snapshot_write_does_not_leak_to_base ... ok
+test test_snapshot_write_is_local ... ok
+test test_open_snapshot ... ok
+test test_list_snapshots ... ok
+test test_concurrent_snapshots_isolated ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+
+     Running tests/symlink_materialization.rs (target/debug/deps/symlink_materialization-5157991d2e8aaf05)
+
+running 10 tests
+test test_default_strategy_is_reflink ... ok
+test test_strategy_saved_in_manifest ... ok
+test test_legacy_manifest_defaults_to_reflink ... ok
+test test_virtual_mode_no_files_on_disk ... ok
+test test_symlink_mode_content_readable ... ok
+test test_reflink_mode_unchanged ... ok
+test test_symlink_mode_creates_symlinks ... ok
+test test_virtual_mode_read_bytes_works ... ok
+test test_symlink_mode_source_update_visible ... ok
+test test_symlink_mode_dematerialize ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+     Running unittests src/main.rs (target/debug/deps/agentdir-cff580dee3455bf1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/agentdir_node-3a16bf537e10c1f2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/_agentdir-2bef066d70c70725)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agentdir
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

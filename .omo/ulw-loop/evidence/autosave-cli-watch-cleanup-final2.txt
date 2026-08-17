@@ -1,0 +1,2 @@
+artifact=.omo/ulw-loop/evidence/autosave-cli-watch-tmux-final2.txt
+cleanup=tmux kill-session ulw-qa-autosave-final2; rm -rf /var/folders/8w/_x12f_056yv_z1x45vr_f2cm0000gp/T//agentdir-autosave-qa-final2.Rwu1Bv; watch pid terminated in transcript

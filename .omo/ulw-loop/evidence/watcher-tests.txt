@@ -1,0 +1,100 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling agentdir v0.1.5 (/Users/jeffrey/Projects-dev/agentdir-autosave-fix/crates/agentdir)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.84s
+     Running unittests src/lib.rs (target/debug/deps/agentdir-3a49c289b06261da)
+
+running 4 tests
+test watcher::tests::test_watcher_cleanup ... ok
+test watcher::tests::test_periodic_polling_emits_rescan ... ok
+test watcher::tests::test_start_waits_until_roots_are_watched ... ok
+test watcher::tests::test_detect_file_creation ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 59 filtered out; finished in 0.79s
+
+     Running tests/batch_map.rs (target/debug/deps/batch_map-2010a89f97313d74)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+     Running tests/edge_agent_scenarios.rs (target/debug/deps/edge_agent_scenarios-3fe8cc3c84bcd9a5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/edge_fs.rs (target/debug/deps/edge_fs-101b9789d07b6573)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.00s
+
+     Running tests/edge_known_issues.rs (target/debug/deps/edge_known_issues-f5e634b94d114b63)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/edge_persistence.rs (target/debug/deps/edge_persistence-ff1bd3f68c745b86)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/edge_reconciliation.rs (target/debug/deps/edge_reconciliation-43974fbef59d1826)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+     Running tests/edge_virtual_paths.rs (target/debug/deps/edge_virtual_paths-1adb7ab796e4dc9e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running tests/editor_autosave.rs (target/debug/deps/editor_autosave-2853d46ab162a97f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/export_mapping.rs (target/debug/deps/export_mapping-7b3abb8431a61fb5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+     Running tests/integration.rs (target/debug/deps/integration-cced1b27683eafba)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+     Running tests/query_apis.rs (target/debug/deps/query_apis-d993a57d1e860b3b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running tests/readonly_materialization.rs (target/debug/deps/readonly_materialization-f8108a3f51ed99b1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/snapshot.rs (target/debug/deps/snapshot-e543e4d12b1c3538)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+     Running tests/symlink_materialization.rs (target/debug/deps/symlink_materialization-0ea0680ba5b3a8d1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+

@@ -1,0 +1,536 @@
+diff --git a/crates/agentdir/src/reconciler.rs b/crates/agentdir/src/reconciler.rs
+index de8f687..16e864d 100644
+--- a/crates/agentdir/src/reconciler.rs
++++ b/crates/agentdir/src/reconciler.rs
+@@ -219,7 +219,8 @@ impl Reconciler {
+         actions: &[ChangeAction],
+     ) -> Result<ReconcileSummary> {
+         let mut summary = ReconcileSummary::default();
+-        if let Err(errors) = Self::preflight_actions(catalog, actions) {
++        let actions = Self::normalize_replacement_actions(catalog, actions);
++        if let Err(errors) = Self::preflight_actions(catalog, &actions) {
+             summary.errors = errors;
+             return Ok(summary);
+         }
+@@ -305,6 +306,84 @@ impl Reconciler {
+         Ok(summary)
+     }
+ 
++    fn normalize_replacement_actions(
++        catalog: &Catalog,
++        actions: &[ChangeAction],
++    ) -> Vec<ChangeAction> {
++        let replacement_targets = actions
++            .iter()
++            .flat_map(|action| match action {
++                ChangeAction::Add {
++                    source,
++                    virtual_path,
++                    ..
++                } if source.as_path().exists() => {
++                    let existing = catalog.find_all_by_source(source);
++                    if existing.is_empty() {
++                        vec![virtual_path.as_str().to_string()]
++                    } else {
++                        existing
++                            .into_iter()
++                            .map(|entry| entry.virtual_path.as_str().to_string())
++                            .collect()
++                    }
++                }
++                ChangeAction::Refresh {
++                    virtual_path,
++                    source,
++                    ..
++                } if source.as_path().exists() => {
++                    vec![virtual_path.as_str().to_string()]
++                }
++                ChangeAction::Add { .. }
++                | ChangeAction::Refresh { .. }
++                | ChangeAction::Remove { .. }
++                | ChangeAction::UpdateHash { .. } => Vec::new(),
++            })
++            .collect::<HashSet<_>>();
++
++        actions
++            .iter()
++            .flat_map(|action| match action {
++                ChangeAction::Remove { virtual_path }
++                    if replacement_targets.contains(virtual_path.as_str()) =>
++                {
++                    Vec::new()
++                }
++                ChangeAction::Add {
++                    source,
++                    virtual_path,
++                    metadata,
++                } => {
++                    if !source.as_path().exists() {
++                        Vec::new()
++                    } else {
++                        let existing = catalog.find_all_by_source(source);
++                        if existing.is_empty() {
++                            vec![ChangeAction::Add {
++                                source: source.clone(),
++                                virtual_path: virtual_path.clone(),
++                                metadata: metadata.clone(),
++                            }]
++                        } else {
++                            existing
++                                .into_iter()
++                                .map(|entry| ChangeAction::Refresh {
++                                    virtual_path: entry.virtual_path.clone(),
++                                    source: source.clone(),
++                                    new_metadata: metadata.clone(),
++                                    content_hash: None,
++                                })
++                                .collect()
++                        }
++                    }
++                }
++                ChangeAction::Refresh { source, .. } if !source.as_path().exists() => Vec::new(),
++                _ => vec![action.clone()],
++            })
++            .collect()
++    }
++
+     fn backup_snapshot_materialized(
+         snapshot: &Catalog,
+         materializer: &Materializer,
+diff --git a/crates/agentdir/src/workspace.rs b/crates/agentdir/src/workspace.rs
+index 83f9546..2dc6b2c 100644
+--- a/crates/agentdir/src/workspace.rs
++++ b/crates/agentdir/src/workspace.rs
+@@ -603,6 +603,50 @@ fn virtual_path_for_relative(mount: &VirtualPath, rel: &Path) -> Result<VirtualP
+     VirtualPath::new(format!("{}{separator}{rel_str}", mount.as_str()))
+ }
+ 
++fn validate_absolute_virtual_path(path: &VirtualPath, label: &str) -> Result<()> {
++    if !path.is_absolute() {
++        return Err(AgentdirError::InvalidPath(format!(
++            "{label} must be an absolute virtual path"
++        )));
++    }
++    Ok(())
++}
++
++fn validate_new_name(new_name: &str) -> Result<()> {
++    if new_name.contains('/') || new_name.contains('\\') {
++        return Err(AgentdirError::InvalidPath(
++            "new name must not contain path separators".into(),
++        ));
++    }
++    if new_name.is_empty() {
++        return Err(AgentdirError::InvalidPath(
++            "new name must not be empty".into(),
++        ));
++    }
++    Ok(())
++}
++
++fn rebase_virtual_path(
++    path: &VirtualPath,
++    from: &VirtualPath,
++    to: &VirtualPath,
++) -> Result<VirtualPath> {
++    if path.as_str() == from.as_str() {
++        return Ok(to.clone());
++    }
++    let from_prefix = if from.as_str() == "/" {
++        "/".to_string()
++    } else {
++        format!("{}/", from.as_str())
++    };
++    let rest = path
++        .as_str()
++        .strip_prefix(&from_prefix)
++        .ok_or_else(|| AgentdirError::InvalidPath(format!("{} is not under {}", path, from)))?;
++    let separator = if to.as_str() == "/" { "" } else { "/" };
++    VirtualPath::new(format!("{}{separator}{rest}", to.as_str()))
++}
++
+ #[cfg(test)]
+ mod tests {
+     use super::*;
+@@ -665,7 +709,7 @@ mod tests {
+         }
+ 
+         let ws = Workspace::open(ws_dir.path().to_path_buf()).unwrap();
+-        assert!(ws.catalog.len() > 0);
++        assert!(!ws.catalog.is_empty());
+         assert_eq!(ws.catalog.source_roots().len(), 1);
+     }
+ 
+@@ -739,8 +783,7 @@ mod tests {
+         .await
+         .unwrap();
+ 
+-        let initial_count = ws.catalog.len();
+-        assert!(initial_count > 0);
++        assert!(!ws.catalog.is_empty());
+ 
+         ws.unmap(&VirtualPath::new("/docs").unwrap()).unwrap();
+         assert_eq!(ws.catalog.len(), 0);
+@@ -770,47 +813,3 @@ mod tests {
+         assert_eq!(result.as_str(), "/docs");
+     }
+ }
+-
+-fn validate_absolute_virtual_path(path: &VirtualPath, label: &str) -> Result<()> {
+-    if !path.is_absolute() {
+-        return Err(AgentdirError::InvalidPath(format!(
+-            "{label} must be an absolute virtual path"
+-        )));
+-    }
+-    Ok(())
+-}
+-
+-fn validate_new_name(new_name: &str) -> Result<()> {
+-    if new_name.contains('/') || new_name.contains('\\') {
+-        return Err(AgentdirError::InvalidPath(
+-            "new name must not contain path separators".into(),
+-        ));
+-    }
+-    if new_name.is_empty() {
+-        return Err(AgentdirError::InvalidPath(
+-            "new name must not be empty".into(),
+-        ));
+-    }
+-    Ok(())
+-}
+-
+-fn rebase_virtual_path(
+-    path: &VirtualPath,
+-    from: &VirtualPath,
+-    to: &VirtualPath,
+-) -> Result<VirtualPath> {
+-    if path.as_str() == from.as_str() {
+-        return Ok(to.clone());
+-    }
+-    let from_prefix = if from.as_str() == "/" {
+-        "/".to_string()
+-    } else {
+-        format!("{}/", from.as_str())
+-    };
+-    let rest = path
+-        .as_str()
+-        .strip_prefix(&from_prefix)
+-        .ok_or_else(|| AgentdirError::InvalidPath(format!("{} is not under {}", path, from)))?;
+-    let separator = if to.as_str() == "/" { "" } else { "/" };
+-    VirtualPath::new(format!("{}{separator}{rest}", to.as_str()))
+-}
+diff --git a/crates/agentdir/tests/edge_fs.rs b/crates/agentdir/tests/edge_fs.rs
+index 7d191ef..a6a4926 100644
+--- a/crates/agentdir/tests/edge_fs.rs
++++ b/crates/agentdir/tests/edge_fs.rs
+@@ -33,7 +33,7 @@ async fn test_empty_source_directory_maps_cleanly() {
+     let summary = map_source(&mut ws, &src, "/empty").await.unwrap();
+ 
+     assert!(summary.entries_added <= 1);
+-    assert!(ws.catalog.get(&vp("/empty")).is_ok() || ws.catalog.len() == 0);
++    assert!(ws.catalog.get(&vp("/empty")).is_ok() || ws.catalog.is_empty());
+     assert_eq!(summary.errors, 0);
+ }
+ 
+diff --git a/crates/agentdir/tests/editor_autosave.rs b/crates/agentdir/tests/editor_autosave.rs
+new file mode 100644
+index 0000000..25f410a
+--- /dev/null
++++ b/crates/agentdir/tests/editor_autosave.rs
+@@ -0,0 +1,283 @@
++use agentdir::backend::SourceEvent;
++use agentdir::reconciler::Reconciler;
++use agentdir::types::{SourcePath, VirtualPath};
++use agentdir::workspace::Workspace;
++use tempfile::TempDir;
++
++fn vp(path: &str) -> VirtualPath {
++    VirtualPath::new(path).unwrap()
++}
++
++async fn mapped_workspace(initial: &[u8]) -> (TempDir, TempDir, Workspace) {
++    let src = TempDir::new().unwrap();
++    let ws_dir = TempDir::new().unwrap();
++    std::fs::write(src.path().join("note.txt"), initial).unwrap();
++
++    let mut ws = Workspace::init(ws_dir.path().to_path_buf()).unwrap();
++    ws.map(SourcePath::new(src.path().to_path_buf()), vp("/docs"))
++        .await
++        .unwrap();
++
++    (src, ws_dir, ws)
++}
++
++#[tokio::test]
++async fn refreshes_existing_mapping_when_atomic_save_emits_delete_then_create() {
++    // Given: an editor replaces a tracked source file with a same-path temp rename.
++    let (src, ws_dir, mut ws) = mapped_workspace(b"before").await;
++    let source_path = SourcePath::new(src.path().join("note.txt"));
++    std::fs::write(src.path().join("note.txt"), b"after atomic save").unwrap();
++    let events = [
++        SourceEvent::Deleted {
++            path: source_path.clone(),
++        },
++        SourceEvent::Created { path: source_path },
++    ];
++
++    // When: watch-mode reconciliation applies the coalesced event batch.
++    let actions = events
++        .iter()
++        .flat_map(|event| Reconciler::from_event(&ws.catalog, event).unwrap())
++        .collect::<Vec<_>>();
++    let summary = Reconciler::apply_actions(&mut ws.catalog, &ws.materializer, &actions).unwrap();
++
++    // Then: the existing virtual path is refreshed, not removed or rejected.
++    assert!(
++        summary.errors.is_empty(),
++        "atomic save delete/create should not preflight-fail: {:?}",
++        summary.errors
++    );
++    assert_eq!(summary.added, 0);
++    assert_eq!(summary.removed, 0);
++    assert_eq!(summary.refreshed, 1);
++    assert_eq!(
++        std::fs::read(ws_dir.path().join("docs/note.txt")).unwrap(),
++        b"after atomic save"
++    );
++    assert!(ws.catalog.get(&vp("/docs/note.txt")).is_ok());
++}
++
++#[tokio::test]
++async fn refreshes_existing_mapping_when_atomic_save_emits_temp_rename_to_tracked_path() {
++    // Given: an editor writes a temp file and renames it over the tracked path.
++    let (src, ws_dir, mut ws) = mapped_workspace(b"before").await;
++    let temp_path = SourcePath::new(src.path().join(".note.txt.tmp"));
++    let target_path = SourcePath::new(src.path().join("note.txt"));
++    std::fs::write(src.path().join("note.txt"), b"after rename save").unwrap();
++    let event = SourceEvent::Renamed {
++        from: temp_path,
++        to: target_path,
++    };
++
++    // When: the rename event is reconciled through the watch event path.
++    let actions = Reconciler::from_event(&ws.catalog, &event).unwrap();
++    let summary = Reconciler::apply_actions(&mut ws.catalog, &ws.materializer, &actions).unwrap();
++
++    // Then: the existing mapping is refreshed instead of trying to add a duplicate.
++    assert!(
++        summary.errors.is_empty(),
++        "temp rename into tracked path should not duplicate-add: {:?}",
++        summary.errors
++    );
++    assert_eq!(summary.added, 0);
++    assert_eq!(summary.removed, 0);
++    assert_eq!(summary.refreshed, 1);
++    assert_eq!(
++        std::fs::read(ws_dir.path().join("docs/note.txt")).unwrap(),
++        b"after rename save"
++    );
++    assert!(ws.catalog.get(&vp("/docs/note.txt")).is_ok());
++}
++
++#[tokio::test]
++async fn ignores_transient_temp_create_when_atomic_save_renames_it_to_tracked_path() {
++    // Given: an editor creates a temp file and immediately renames it over a tracked file.
++    let (src, ws_dir, mut ws) = mapped_workspace(b"before").await;
++    let temp_path = SourcePath::new(src.path().join(".note.txt.tmp"));
++    let target_path = SourcePath::new(src.path().join("note.txt"));
++    std::fs::write(src.path().join("note.txt"), b"after temp create rename").unwrap();
++    let events = [
++        SourceEvent::Created {
++            path: temp_path.clone(),
++        },
++        SourceEvent::Renamed {
++            from: temp_path,
++            to: target_path,
++        },
++    ];
++
++    // When: watch-mode reconciliation handles the whole editor-save batch.
++    let actions = events
++        .iter()
++        .flat_map(|event| Reconciler::from_event(&ws.catalog, event).unwrap())
++        .collect::<Vec<_>>();
++    let summary = Reconciler::apply_actions(&mut ws.catalog, &ws.materializer, &actions).unwrap();
++
++    // Then: the vanished temp file is ignored and the tracked file is refreshed.
++    assert!(
++        summary.errors.is_empty(),
++        "transient temp create should not block target refresh: {:?}",
++        summary.errors
++    );
++    assert_eq!(summary.added, 0);
++    assert_eq!(summary.removed, 0);
++    assert_eq!(summary.refreshed, 1);
++    assert_eq!(
++        std::fs::read(ws_dir.path().join("docs/note.txt")).unwrap(),
++        b"after temp create rename"
++    );
++    assert!(ws.catalog.get(&vp("/docs/.note.txt.tmp")).is_err());
++    assert!(!ws_dir.path().join("docs/.note.txt.tmp").exists());
++}
++
++#[tokio::test]
++async fn refreshes_all_virtual_aliases_when_atomic_save_replaces_copied_source() {
++    // Given: a tracked source has an additional virtual copy.
++    let (src, ws_dir, mut ws) = mapped_workspace(b"before").await;
++    ws.cp(&vp("/docs/note.txt"), &vp("/copies/note.txt"))
++        .unwrap();
++    let source_path = SourcePath::new(src.path().join("note.txt"));
++    std::fs::write(src.path().join("note.txt"), b"after copied autosave").unwrap();
++    let events = [
++        SourceEvent::Deleted {
++            path: source_path.clone(),
++        },
++        SourceEvent::Created { path: source_path },
++    ];
++
++    // When: the editor-save event batch is applied.
++    let actions = events
++        .iter()
++        .flat_map(|event| Reconciler::from_event(&ws.catalog, event).unwrap())
++        .collect::<Vec<_>>();
++    let summary = Reconciler::apply_actions(&mut ws.catalog, &ws.materializer, &actions).unwrap();
++
++    // Then: every virtual alias for the source is refreshed and retained.
++    assert!(summary.errors.is_empty());
++    assert_eq!(summary.added, 0);
++    assert_eq!(summary.removed, 0);
++    assert_eq!(summary.refreshed, 2);
++    for path in ["docs/note.txt", "copies/note.txt"] {
++        assert_eq!(
++            std::fs::read(ws_dir.path().join(path)).unwrap(),
++            b"after copied autosave"
++        );
++    }
++    assert!(ws.catalog.get(&vp("/docs/note.txt")).is_ok());
++    assert!(ws.catalog.get(&vp("/copies/note.txt")).is_ok());
++}
++
++#[tokio::test]
++async fn preserves_virtual_move_when_atomic_save_replaces_source() {
++    // Given: a tracked source was moved in the virtual namespace.
++    let (src, ws_dir, mut ws) = mapped_workspace(b"before").await;
++    ws.mv(&vp("/docs/note.txt"), &vp("/renamed/note.txt"))
++        .unwrap();
++    let source_path = SourcePath::new(src.path().join("note.txt"));
++    std::fs::write(src.path().join("note.txt"), b"after moved autosave").unwrap();
++    let events = [
++        SourceEvent::Deleted {
++            path: source_path.clone(),
++        },
++        SourceEvent::Created { path: source_path },
++    ];
++
++    // When: the editor-save event batch is applied.
++    let actions = events
++        .iter()
++        .flat_map(|event| Reconciler::from_event(&ws.catalog, event).unwrap())
++        .collect::<Vec<_>>();
++    let summary = Reconciler::apply_actions(&mut ws.catalog, &ws.materializer, &actions).unwrap();
++
++    // Then: the virtual move is preserved and the canonical path is not recreated.
++    assert!(summary.errors.is_empty());
++    assert_eq!(summary.added, 0);
++    assert_eq!(summary.removed, 0);
++    assert_eq!(summary.refreshed, 1);
++    assert_eq!(
++        std::fs::read(ws_dir.path().join("renamed/note.txt")).unwrap(),
++        b"after moved autosave"
++    );
++    assert!(ws.catalog.get(&vp("/renamed/note.txt")).is_ok());
++    assert!(ws.catalog.get(&vp("/docs/note.txt")).is_err());
++    assert!(!ws_dir.path().join("docs/note.txt").exists());
++}
++
++#[tokio::test]
++async fn still_removes_mapping_when_editor_delete_is_not_recreated() {
++    // Given: a tracked source file is removed without a replacement.
++    let (src, ws_dir, mut ws) = mapped_workspace(b"before").await;
++    let source_path = SourcePath::new(src.path().join("note.txt"));
++    std::fs::remove_file(src.path().join("note.txt")).unwrap();
++    let event = SourceEvent::Deleted { path: source_path };
++
++    // When: the watch event is applied.
++    let actions = Reconciler::from_event(&ws.catalog, &event).unwrap();
++    let summary = Reconciler::apply_actions(&mut ws.catalog, &ws.materializer, &actions).unwrap();
++
++    // Then: deletion still removes the virtual entry and materialized file.
++    assert!(summary.errors.is_empty());
++    assert_eq!(summary.added, 0);
++    assert_eq!(summary.removed, 1);
++    assert_eq!(summary.refreshed, 0);
++    assert!(ws.catalog.get(&vp("/docs/note.txt")).is_err());
++    assert!(!ws_dir.path().join("docs/note.txt").exists());
++}
++
++#[tokio::test]
++async fn still_removes_mapping_when_stale_create_is_followed_by_delete() {
++    // Given: a stale create event for a tracked path is followed by a real delete event.
++    let (src, ws_dir, mut ws) = mapped_workspace(b"before").await;
++    let source_path = SourcePath::new(src.path().join("note.txt"));
++    std::fs::remove_file(src.path().join("note.txt")).unwrap();
++    let events = [
++        SourceEvent::Created {
++            path: source_path.clone(),
++        },
++        SourceEvent::Deleted { path: source_path },
++    ];
++
++    // When: the stale create/delete batch is applied.
++    let actions = events
++        .iter()
++        .flat_map(|event| Reconciler::from_event(&ws.catalog, event).unwrap())
++        .collect::<Vec<_>>();
++    let summary = Reconciler::apply_actions(&mut ws.catalog, &ws.materializer, &actions).unwrap();
++
++    // Then: the stale create is ignored and the real delete removes the mapping.
++    assert!(summary.errors.is_empty());
++    assert_eq!(summary.added, 0);
++    assert_eq!(summary.removed, 1);
++    assert_eq!(summary.refreshed, 0);
++    assert!(ws.catalog.get(&vp("/docs/note.txt")).is_err());
++    assert!(!ws_dir.path().join("docs/note.txt").exists());
++}
++
++#[tokio::test]
++async fn still_removes_mapping_when_stale_modify_is_followed_by_delete() {
++    // Given: a stale modify event for a tracked path is followed by a real delete event.
++    let (src, ws_dir, mut ws) = mapped_workspace(b"before").await;
++    let source_path = SourcePath::new(src.path().join("note.txt"));
++    std::fs::remove_file(src.path().join("note.txt")).unwrap();
++    let events = [
++        SourceEvent::Modified {
++            path: source_path.clone(),
++        },
++        SourceEvent::Deleted { path: source_path },
++    ];
++
++    // When: the stale modify/delete batch is applied.
++    let actions = events
++        .iter()
++        .flat_map(|event| Reconciler::from_event(&ws.catalog, event).unwrap())
++        .collect::<Vec<_>>();
++    let summary = Reconciler::apply_actions(&mut ws.catalog, &ws.materializer, &actions).unwrap();
++
++    // Then: the stale modify is ignored and the real delete removes the mapping.
++    assert!(summary.errors.is_empty());
++    assert_eq!(summary.added, 0);
++    assert_eq!(summary.removed, 1);
++    assert_eq!(summary.refreshed, 0);
++    assert!(ws.catalog.get(&vp("/docs/note.txt")).is_err());
++    assert!(!ws_dir.path().join("docs/note.txt").exists());
++}
+diff --git a/crates/agentdir/tests/integration.rs b/crates/agentdir/tests/integration.rs
+index 924a6e1..228d6a6 100644
+--- a/crates/agentdir/tests/integration.rs
++++ b/crates/agentdir/tests/integration.rs
+@@ -164,7 +164,7 @@ async fn test_persistence_roundtrip() {
+     }
+ 
+     let ws = Workspace::open(ws_dir.path().to_path_buf()).unwrap();
+-    assert!(ws.catalog.len() > 0);
++    assert!(!ws.catalog.is_empty());
+     assert_eq!(ws.catalog.source_roots().len(), 1);
+ 
+     assert_eq!(
