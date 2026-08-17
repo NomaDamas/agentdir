@@ -1,0 +1,2 @@
+Python wheel smoke passed
+EXIT:0

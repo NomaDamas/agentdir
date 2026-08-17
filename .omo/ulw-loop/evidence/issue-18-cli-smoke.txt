@@ -1,0 +1,23 @@
+CLI smoke passed
+
+EXIT:0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

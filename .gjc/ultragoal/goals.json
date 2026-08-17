@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "brief": "Execute the approved ralplan consensus plan at .gjc/plans/ralplan/2026-06-09-0408-43ad/pending-approval.md for the remaining undone work on agentdir GitHub issues #18 and #19. Branch dev. Constraints: research/docs + non-destructive CI dry-run gates only; NO mount-driver/FUSE/ProjFS/WinFsp implementation; NO real publish (cargo publish / npm publish / npm pack / maturin must not run locally); checks stay zero-dependency stdlib; reuse crates/agentdir/tests/issue_18_release_qa.py conventions.\n\n@goal: Document zero-copy read-only view feasibility and decision (#19)\nCreate docs/zero-copy-readonly-views.md satisfying all four issue #19 acceptance criteria: (a) per-platform approaches with privileges/deployment — Linux read-only bind mount + FUSE passthrough, Windows ProjFS + WinFsp, macOS APFS reflink (already implemented); (b) recommended default per platform; (c) explicit per-mechanism verdict on normal-file compatibility WITHOUT copying data, including that a read-only bind mount cannot produce agentdir's arbitrary restructured virtual tree without an overlay/FUSE layer, and that CoW reflink is filesystem-level (APFS/Btrfs/XFS) not macOS-only; (d) a Decision section opening with ONE unambiguous verdict sentence (remain a documented limitation vs start an implementation project) followed by trigger conditions and ADR fields. Then reconcile AGENTS.md \"Future / Out of Current Scope\" to link the new doc with no contradictory claims. Verify with the plan's grep checklist (test -f, bind mount, FUSE, ProjFS+WinFsp, reflink, \"## Recommended default per platform\", \"## Decision\", AGENTS.md link).\n\n@goal: Add release-workflow dry-run gates (#18 residual)\nAdd `cargo publish -p agentdir-cli --dry-run` to .github/workflows/release-rust.yml as a step placed AFTER the \"Wait for crates.io sparse index\" step and BEFORE the \"Publish agentdir-cli\" step. Add `npm pack --dry-run` to .github/workflows/release-node.yml (working-directory bindings/node) as a step BEFORE the \"Publish\" (npm publish) step. Extend crates/agentdir/tests/issue_18_release_qa.py with two zero-dependency stdlib contains-checks: test_release_rust_workflow_dry_runs_cli_before_publish (asserts the rust dry-run string present) and test_release_node_workflow_packs_before_publish (asserts the npm pack dry-run string present). Verify: grep both YAML files; python3 crates/agentdir/tests/issue_18_release_qa.py exits 0 with all PASS; make test and make lint unaffected. Do NOT execute any real publish/pack/maturin command.",
+  "gjcGoalMode": "aggregate",
+  "gjcObjective": "Complete the durable ultragoal plan in .gjc/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .gjc/ultragoal/ledger.jsonl as the audit trail.",
+  "goals": [
+    {
+      "id": "G001",
+      "title": "Document zero-copy read-only view feasibility and decision (#19)",
+      "objective": "Create docs/zero-copy-readonly-views.md satisfying all four issue #19 acceptance criteria: (a) per-platform approaches with privileges/deployment — Linux read-only bind mount + FUSE passthrough, Windows ProjFS + WinFsp, macOS APFS reflink (already implemented); (b) recommended default per platform; (c) explicit per-mechanism verdict on normal-file compatibility WITHOUT copying data, including that a read-only bind mount cannot produce agentdir's arbitrary restructured virtual tree without an overlay/FUSE layer, and that CoW reflink is filesystem-level (APFS/Btrfs/XFS) not macOS-only; (d) a Decision section opening with ONE unambiguous verdict sentence (remain a documented limitation vs start an implementation project) followed by trigger conditions and ADR fields. Then reconcile AGENTS.md \"Future / Out of Current Scope\" to link the new doc with no contradictory claims. Verify with the plan's grep checklist (test -f, bind mount, FUSE, ProjFS+WinFsp, reflink, \"## Recommended default per platform\", \"## Decision\", AGENTS.md link).",
+      "status": "complete",
+      "createdAt": "2026-06-09T04:12:12.232Z",
+      "updatedAt": "2026-06-09T04:23:33.159Z",
+      "startedAt": "2026-06-09T04:12:18.634Z",
+      "completedAt": "2026-06-09T04:23:33.159Z",
+      "evidence": "Issue #19 resolved: docs/zero-copy-readonly-views.md authored covering all four acceptance criteria (per-platform approaches+privileges, per-platform default, per-mechanism normal-file-without-copy verdict, one-verdict Decision=documented limitation + triggers + ADR); AGENTS.md 'Future / Out of Current Scope' reconciled to link the doc and match the decision. 13/13 grep checklist PASS (evidence/issue19-doc-verification.txt). Constraint honored: research/docs only, no driver implementation.",
+      "completionVerification": {
+        "schemaVersion": 1,
+        "receiptId": "a88a1c19-8360-45c8-8513-8403110dafb3",
+        "verifiedAt": "2026-06-09T04:23:33.159Z",
+        "goalId": "G001",
+        "receiptKind": "per-goal",
+        "goalStatusBeforeCheckpoint": "active",
+        "gjcGoalMode": "aggregate",
+        "gjcObjective": "Complete the durable ultragoal plan in .gjc/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .gjc/ultragoal/ledger.jsonl as the audit trail.",
+        "qualityGateHash": "d445bbca2dee0897d24f9c6bdb2fdb2a2456693b6c0b872cee98e05cd2e85f37",
+        "gjcGoalSnapshotHash": "a7abca9a78cc9df0814981daadf4c297b0f9f2338a4283cb20a6a68448a682f5",
+        "planGeneration": "275a2fd633c7c0fc6ce834ac6c3e7f19c6385a46638fa9d2935ec2c5f9038641",
+        "basis": {
+          "planHashBeforeCheckpoint": "b8717557a2b61b51c5a4d5f9f8617af602f9a2787e815ac32704af1a075f6e22",
+          "latestRelevantLedgerEventIdBeforeCheckpoint": "7a9b0c03-cd53-4ba7-851c-93d0c7d7fc49",
+          "goalUpdatedAtBeforeCheckpoint": "2026-06-09T04:23:33.159Z",
+          "relevantGoalIdsBeforeCheckpoint": [
+            "G001"
+          ],
+          "requiredGoalSetHashBeforeCheckpoint": "0b84ec15393f75c0b8fc3df384f86a21c9870c7efbd118e8d3a65dfdf3b36f3e"
+        },
+        "checkpointLedgerEventId": "46bcac12-2063-425f-a087-c0439f41e835"
+      }
+    },
+    {
+      "id": "G002",
+      "title": "Add release-workflow dry-run gates (#18 residual)",
+      "objective": "Add `cargo publish -p agentdir-cli --dry-run` to .github/workflows/release-rust.yml as a step placed AFTER the \"Wait for crates.io sparse index\" step and BEFORE the \"Publish agentdir-cli\" step. Add `npm pack --dry-run` to .github/workflows/release-node.yml (working-directory bindings/node) as a step BEFORE the \"Publish\" (npm publish) step. Extend crates/agentdir/tests/issue_18_release_qa.py with two zero-dependency stdlib contains-checks: test_release_rust_workflow_dry_runs_cli_before_publish (asserts the rust dry-run string present) and test_release_node_workflow_packs_before_publish (asserts the npm pack dry-run string present). Verify: grep both YAML files; python3 crates/agentdir/tests/issue_18_release_qa.py exits 0 with all PASS; make test and make lint unaffected. Do NOT execute any real publish/pack/maturin command.",
+      "status": "complete",
+      "createdAt": "2026-06-09T04:12:12.232Z",
+      "updatedAt": "2026-06-09T04:27:03.262Z",
+      "startedAt": "2026-06-09T04:23:33.161Z",
+      "completedAt": "2026-06-09T04:27:03.262Z",
+      "evidence": "Issue #18 residual gates resolved: release-rust.yml adds 'cargo publish -p agentdir-cli --dry-run' after the sparse-index wait and before Publish agentdir-cli (ordering asserted); release-node.yml adds 'npm pack --dry-run' before npm publish; crates/agentdir/tests/issue_18_release_qa.py gains 2 stdlib checks. Verify: stdlib QA runner 12/12 PASS exit 0; all 3 workflow YAMLs parse via yaml.safe_load; cargo fmt --check passes; no .rs changed so cargo test/clippy unaffected; NO real publish/pack/maturin executed. Evidence: evidence/issue18-gates-verification.txt.",
+      "completionVerification": {
+        "schemaVersion": 1,
+        "receiptId": "283e95ac-e94d-41ae-9e82-005ce5ba497c",
+        "verifiedAt": "2026-06-09T04:27:03.262Z",
+        "goalId": "G002",
+        "receiptKind": "final-aggregate",
+        "goalStatusBeforeCheckpoint": "active",
+        "gjcGoalMode": "aggregate",
+        "gjcObjective": "Complete the durable ultragoal plan in .gjc/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .gjc/ultragoal/ledger.jsonl as the audit trail.",
+        "qualityGateHash": "b132b18ef534c12fa20f95818f77e48eb8b732ab4ed113b5d4fa72e6fcd47cf6",
+        "gjcGoalSnapshotHash": "97b056e8ea5c89ff6a991797cb3e317bc95499124a2d83dc84e065cbca9cf930",
+        "planGeneration": "770c80605643a9ede686e0257a01ae1f581c3652d14d716a1db0e702125e3f55",
+        "basis": {
+          "planHashBeforeCheckpoint": "ad4c5753fe7de1224b4f445072af7c074452db3f2a2a9290864bcb7f17a377b5",
+          "latestRelevantLedgerEventIdBeforeCheckpoint": "1232039c-e7a1-4fb0-a7df-ee2232281d2b",
+          "goalUpdatedAtBeforeCheckpoint": "2026-06-09T04:27:03.262Z",
+          "relevantGoalIdsBeforeCheckpoint": [
+            "G001",
+            "G002"
+          ],
+          "requiredGoalSetHashBeforeCheckpoint": "5fcbb6af3450ae5c7d7bec4c915f1bd5d93c4652b226fd2cd6efb4fcc1da09fa"
+        },
+        "checkpointLedgerEventId": "a268da67-9ee4-4e30-bef8-251870131d37"
+      }
+    }
+  ],
+  "createdAt": "2026-06-09T04:12:12.232Z",
+  "updatedAt": "2026-06-09T04:27:03.262Z"
+}

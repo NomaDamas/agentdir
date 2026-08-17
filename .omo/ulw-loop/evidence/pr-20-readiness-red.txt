@@ -1,0 +1,68 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+________ test_python_release_workflow_import_smokes_built_wheels_per_os ________
+
+    def test_python_release_workflow_import_smokes_built_wheels_per_os() -> None:
+        workflow = read(".github/workflows/release-python.yml")
+        assert "smoke:" in workflow
+        assert "needs: build" in workflow
+        assert "runs-on: ${{ matrix.os }}" in workflow
+>       assert "python -m pip install --no-index --find-links dist agentdir" in workflow
+E       assert 'python -m pip install --no-index --find-links dist agentdir' in 'name: Release Python (PyPI)\n\non:\n  push:\n    tags: ["v*"]\n\npermissions:\n  contents: read\n\njobs:\n  build:\n ...    path: dist\n\n      - uses: pypa/gh-action-pypi-publish@release/v1\n        with:\n          packages-dir: dist/\n'
+
+crates/agentdir/tests/issue_18_release_qa.py:74: AssertionError
+___________ test_python_wheel_smoke_script_exercises_binding_surface ___________
+
+    def test_python_wheel_smoke_script_exercises_binding_surface() -> None:
+>       script = read("scripts/ci/python_wheel_smoke.py")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+crates/agentdir/tests/issue_18_release_qa.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+crates/agentdir/tests/issue_18_release_qa.py:12: in read
+    return (ROOT / path).read_text(encoding="utf-8")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.pyenv/versions/3.12.0/lib/python3.12/pathlib.py:1028: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/Users/jeffrey/Projects-dev/agentdir/scripts/ci/python_wheel_smoke.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/Users/jeffrey/Projects-dev/agentdir/scripts/ci/python_wheel_smoke.py'
+
+../../.pyenv/versions/3.12.0/lib/python3.12/pathlib.py:1014: FileNotFoundError
+_________ test_smoke_scripts_support_keep_temp_for_manual_qa_artifacts _________
+
+    def test_smoke_scripts_support_keep_temp_for_manual_qa_artifacts() -> None:
+        cli_script = read("scripts/ci/cli_smoke.py")
+        strategy_script = read("scripts/ci/strategy_smoke.py")
+>       assert "--keep-temp" in cli_script
+E       assert '--keep-temp' in 'from __future__ import annotations\n\nimport argparse\nimport json\nimport os\nimport shutil\nimport stat\nimport sub...ally:\n        shutil.rmtree(temp, ignore_errors=True)\n\n\nif __name__ == "__main__":\n    raise SystemExit(main())\n'
+
+crates/agentdir/tests/issue_18_release_qa.py:96: AssertionError
+__________ test_release_preflight_has_expected_version_negative_path ___________
+
+    def test_release_preflight_has_expected_version_negative_path() -> None:
+        script = read("scripts/ci/release_preflight.py")
+>       assert "--expected-version" in script
+E       assert '--expected-version' in 'from __future__ import annotations\n\nimport argparse\nimport json\nimport re\nimport subprocess\nimport sys\nimport ...s error:\n        print(f"Release metadata preflight failed: {error}", file=sys.stderr)\n        raise SystemExit(1)\n'
+
+crates/agentdir/tests/issue_18_release_qa.py:104: AssertionError
+=========================== short test summary info ============================
+FAILED crates/agentdir/tests/issue_18_release_qa.py::test_python_release_workflow_import_smokes_built_wheels_per_os
+FAILED crates/agentdir/tests/issue_18_release_qa.py::test_python_wheel_smoke_script_exercises_binding_surface
+FAILED crates/agentdir/tests/issue_18_release_qa.py::test_smoke_scripts_support_keep_temp_for_manual_qa_artifacts
+FAILED crates/agentdir/tests/issue_18_release_qa.py::test_release_preflight_has_expected_version_negative_path
+4 failed, 5 deselected in 0.04s

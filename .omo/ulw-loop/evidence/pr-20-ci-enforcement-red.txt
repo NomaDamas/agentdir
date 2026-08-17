@@ -1,0 +1,13 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________________ test_ci_enforces_release_qa_artifact_checks __________________
+
+    def test_ci_enforces_release_qa_artifact_checks() -> None:
+        workflow = read(".github/workflows/ci.yml")
+>       assert "Release QA artifact checks" in workflow
+E       assert 'Release QA artifact checks' in 'name: CI\n\non:\n  push:\n    branches: [master]\n  pull_request:\n\nenv:\n  CARGO_TERM_COLOR: always\n  PYO3_USE_ABI...ts passed (exit code $EXIT may be from NAPI cleanup signal)"\n            exit 0\n          fi\n          exit $EXIT\n'
+
+crates/agentdir/tests/issue_18_release_qa.py:27: AssertionError
+=========================== short test summary info ============================
+FAILED crates/agentdir/tests/issue_18_release_qa.py::test_ci_enforces_release_qa_artifact_checks
+1 failed, 9 deselected in 0.03s

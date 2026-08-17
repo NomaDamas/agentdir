@@ -1,0 +1,5 @@
+removed cli temp: /var/folders/8w/_x12f_056yv_z1x45vr_f2cm0000gp/T/agentdir-cli-smoke-jkbsh8g9
+cli temp absent: yes
+removed strategy temp: /var/folders/8w/_x12f_056yv_z1x45vr_f2cm0000gp/T/agentdir-strategy-smoke-0xtc4o6x
+strategy temp absent: yes
+no ulw-qa-pr20 tmux sessions remain

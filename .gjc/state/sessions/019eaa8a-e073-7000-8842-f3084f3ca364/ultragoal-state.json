@@ -1,0 +1,58 @@
+{
+  "version": 2,
+  "skill": "ultragoal",
+  "current_phase": "complete",
+  "active": false,
+  "handoff_from": "ralplan",
+  "handoff_at": "2026-06-09T04:11:33.303Z",
+  "updated_at": "2026-06-09T04:27:12.719Z",
+  "receipt": {
+    "version": 1,
+    "skill": "ultragoal",
+    "owner": "gjc-runtime",
+    "command": "gjc ultragoal (reconcile)",
+    "state_path": "/Users/jeffrey/Projects-dev/agentdir/.gjc/state/sessions/019eaa8a-e073-7000-8842-f3084f3ca364/skill-active-state.json",
+    "storage_path": "/Users/jeffrey/Projects-dev/agentdir/.gjc/state/sessions/019eaa8a-e073-7000-8842-f3084f3ca364/ultragoal-state.json",
+    "mutated_at": "2026-06-09T04:27:12.719Z",
+    "fresh_until": "2026-06-09T04:57:12.719Z",
+    "status": "fresh",
+    "mutation_id": "ultragoal:reconcile:2026-06-09T04:27:12.719Z",
+    "verb": "reconcile",
+    "forced": true,
+    "from_phase": "complete",
+    "to_phase": "complete",
+    "content_sha256": {
+      "algorithm": "sha256",
+      "value": "4dd2f695bd9a5b88daa7bfe9d9d9b7220781b6a9ec1b52926e7b10f919e82eb8",
+      "covered_path": "/Users/jeffrey/Projects-dev/agentdir/.gjc/state/sessions/019eaa8a-e073-7000-8842-f3084f3ca364/ultragoal-state.json",
+      "computed_at": "2026-06-09T04:27:12.719Z"
+    }
+  },
+  "session_id": "019eaa8a-e073-7000-8842-f3084f3ca364",
+  "status": "complete",
+  "goals": [
+    {
+      "id": "G001",
+      "title": "Document zero-copy read-only view feasibility and decision (#19)",
+      "status": "complete"
+    },
+    {
+      "id": "G002",
+      "title": "Add release-workflow dry-run gates (#18 residual)",
+      "status": "complete"
+    }
+  ],
+  "counts": {
+    "pending": 0,
+    "active": 0,
+    "complete": 2,
+    "failed": 0,
+    "blocked": 0,
+    "review_blocked": 0,
+    "superseded": 0
+  },
+  "ledger_path": "/Users/jeffrey/Projects-dev/agentdir/.gjc/ultragoal/ledger.jsonl",
+  "brief_path": "/Users/jeffrey/Projects-dev/agentdir/.gjc/ultragoal/brief.md",
+  "goals_path": "/Users/jeffrey/Projects-dev/agentdir/.gjc/ultragoal/goals.json",
+  "gjc_objective": "Complete the durable ultragoal plan in .gjc/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .gjc/ultragoal/ledger.jsonl as the audit trail."
+}

@@ -1,0 +1,14 @@
+=== Issue #19 doc acceptance-criteria coverage (2026-06-09T04:20:38Z) ===
+[a/structure] exists: OK
+[a] Linux bind mount: OK
+[a] Linux FUSE: OK
+[a] Windows ProjFS+WinFsp: OK
+[a] macOS APFS reflink: OK
+[a] privileges/deployment table: OK
+[b] per-platform default: OK
+[c] normal-file-without-copy verdicts: OK
+[d] one-verdict decision: OK
+[c] bind-mount restructure caveat: OK
+[c] CoW filesystem-level nuance: OK
+[G2] AGENTS.md links doc: OK
+[G2] AGENTS.md non-contradiction (matches decision): OK

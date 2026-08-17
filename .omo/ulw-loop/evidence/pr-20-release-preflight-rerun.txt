@@ -1,0 +1,70 @@
+COMMAND: python3 scripts/ci/release_preflight.py --expected-version 0.0.0
+Release metadata preflight failed: version mismatch: expected 0.0.0, found 0.1.5
+mismatch_exit=1
+COMMAND: python3 scripts/ci/release_preflight.py --expected-version 0.1.5
+    Updating crates.io index
+warning: crate agentdir@0.1.5 already exists on crates.io index
+   Packaging agentdir v0.1.5 (/Users/jeffrey/Projects-dev/agentdir/crates/agentd
+ir)
+    Updating crates.io index
+    Packaged 33 files, 311.2KiB (55.6KiB compressed)
+   Verifying agentdir v0.1.5 (/Users/jeffrey/Projects-dev/agentdir/crates/agentd
+ir)
+   Compiling agentdir v0.1.5 (/Users/jeffrey/Projects-dev/agentdir/target/packag
+e/agentdir-0.1.5)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.33s
+   Uploading agentdir v0.1.5 (/Users/jeffrey/Projects-dev/agentdir/crates/agentd
+ir)
+warning: aborting upload due to dry run
+    Updating crates.io index
+warning: crate agentdir-cli@0.1.5 already exists on crates.io index
+   Packaging agentdir-cli v0.1.5 (/Users/jeffrey/Projects-dev/agentdir/crates/ag
+entdir-cli)
+    Updating crates.io index
+    Packaged 5 files, 43.4KiB (11.9KiB compressed)
+   Verifying agentdir-cli v0.1.5 (/Users/jeffrey/Projects-dev/agentdir/crates/ag
+entdir-cli)
+  Downloaded agentdir v0.1.5
+  Downloaded 1 crate (51.1KiB) in 0.49s
+   Compiling agentdir v0.1.5
+   Compiling agentdir-cli v0.1.5 (/Users/jeffrey/Projects-dev/agentdir/target/pa
+ckage/agentdir-cli-0.1.5)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.98s
+   Uploading agentdir-cli v0.1.5 (/Users/jeffrey/Projects-dev/agentdir/crates/ag
+entdir-cli)
+warning: aborting upload due to dry run
+npm notice
+npm notice 📦  @nomadamas/agentdir@0.1.5
+npm notice Tarball Contents
+npm notice 8.4kB README.md
+npm notice 5.7kB index.d.ts
+npm notice 25.1kB index.js
+npm notice 1.6kB package.json
+npm notice Tarball Details
+npm notice name: @nomadamas/agentdir
+npm notice version: 0.1.5
+npm notice filename: nomadamas-agentdir-0.1.5.tgz
+npm notice package size: 6.9 kB
+npm notice unpacked size: 40.7 kB
+npm notice shasum: 88bfab61a79e6a8d63265c18de2de568bbb876c1
+npm notice integrity: sha512-Ak9H+FKP8rLkI[...]cyHFOD56kG+HA==
+npm notice total files: 4
+npm notice
+nomadamas-agentdir-0.1.5.tgz
+🍹 Building a mixed python/rust project
+🔗 Found pyo3 bindings with abi3 support
+📡 Using build options features from pyproject.toml
+From `cargo package --list --allow-dirty --manifest-path /Users/jeffrey/Projects
+-dev/agentdir/bindings/python/Cargo.toml`:
+warning: manifest has no description, license, license-file, documentation, home
+page or repository
+  |
+  = note: see https://doc.rust-lang.org/cargo/reference/manifest.html#package-me
+tadata for more info
+📦 Built source distribution to /Users/jeffrey/Projects-dev/agentdir/target/whee
+ls/agentdir-0.1.5.tar.gz
+Release metadata preflight passed: version 0.1.5
+ok_exit=0
+
+cleanup: killed tmux session ulw-qa-pr20-preflight; no session remains
+C002 manual QA PASS

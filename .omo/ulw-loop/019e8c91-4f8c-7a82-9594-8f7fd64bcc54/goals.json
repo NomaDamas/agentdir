@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "createdAt": "2026-06-03T08:21:52.911Z",
+  "updatedAt": "2026-06-03T10:40:06.341Z",
+  "briefPath": ".omo/ulw-loop/019e8c91-4f8c-7a82-9594-8f7fd64bcc54/brief.md",
+  "goalsPath": ".omo/ulw-loop/019e8c91-4f8c-7a82-9594-8f7fd64bcc54/goals.json",
+  "ledgerPath": ".omo/ulw-loop/019e8c91-4f8c-7a82-9594-8f7fd64bcc54/ledger.jsonl",
+  "codexGoalMode": "aggregate",
+  "goals": [
+    {
+      "id": "G001-resolve-github-issue-18-in-agentdir",
+      "title": "Resolve GitHub issue #18 in agentdir: add cross-platform release QA c...",
+      "objective": "Resolve GitHub issue #18 in agentdir: add cross-platform release QA coverage with cargo test OS matrix, CLI smoke on Linux/macOS/Windows, strategy smoke for reflink/virtual/symlink with symlink passthrough documented, release metadata/version preflight, and Python wheel post-build import smoke.",
+      "status": "in_progress",
+      "successCriteria": [
+        {
+          "id": "C001",
+          "scenario": "happy path for: Resolve GitHub issue #18 in agentdir: add cross-platform release QA coverage...",
+          "userModel": "happy",
+          "expectedEvidence": "Replace via revise_criterion with observable happy-path proof for goal 1.",
+          "capturedEvidence": "ci/os matrix, CLI smoke, and strategy smoke passed: .omo/ulw-loop/evidence/issue-18-ci-os-matrix.txt; .omo/ulw-loop/evidence/issue-18-cli-smoke.txt; .omo/ulw-loop/evidence/issue-18-strategy-smoke.txt | cleanup: killed ulw-qa-ci, ulw-qa-cli, ulw-qa-strategy; no ulw-qa-* leftovers for these sessions",
+          "status": "pass",
+          "capturedAt": "2026-06-03T08:55:07.794Z"
+        },
+        {
+          "id": "C002",
+          "scenario": "edge case (boundary/empty/malformed)",
+          "userModel": "edge",
+          "expectedEvidence": "Replace via revise_criterion with boundary or malformed-input proof for: Resolve GitHub issue #18 in agentdir: add cross-platform release QA coverage....",
+          "capturedEvidence": "release metadata preflight passed: .omo/ulw-loop/evidence/issue-18-release-preflight.txt | cleanup: killed ulw-qa-release; no smoke temp dirs remain",
+          "status": "pass",
+          "capturedAt": "2026-06-03T08:55:07.851Z"
+        },
+        {
+          "id": "C003",
+          "scenario": "regression: adjacent surface still works",
+          "userModel": "regression",
+          "expectedEvidence": "Replace via revise_criterion with regression proof for neighboring behavior after: Resolve GitHub issue #18 in agentdir: add cross-platform release QA coverage....",
+          "capturedEvidence": "Python wheel release smoke workflow check passed: .omo/ulw-loop/evidence/issue-18-python-release.txt | cleanup: killed ulw-qa-python-release; no ulw-qa-python-release session remains",
+          "status": "pass",
+          "capturedAt": "2026-06-03T08:55:07.909Z"
+        }
+      ],
+      "attempt": 1,
+      "createdAt": "2026-06-03T08:21:52.911Z",
+      "updatedAt": "2026-06-03T10:40:06.341Z",
+      "startedAt": "2026-06-03T10:40:06.341Z"
+    }
+  ],
+  "codexObjective": "Complete the durable ulw-loop plan in .omo/ulw-loop/019e8c91-4f8c-7a82-9594-8f7fd64bcc54/goals.json, including later accepted/appended stories, under the original brief constraints; use .omo/ulw-loop/019e8c91-4f8c-7a82-9594-8f7fd64bcc54/ledger.jsonl as the audit trail.",
+  "activeGoalId": "G001-resolve-github-issue-18-in-agentdir"
+}

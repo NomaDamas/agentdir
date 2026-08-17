@@ -1,0 +1,1 @@
+Resolve GitHub issue #18 in agentdir: add cross-platform release QA coverage with cargo test OS matrix, CLI smoke on Linux/macOS/Windows, strategy smoke for reflink/virtual/symlink with symlink passthrough documented, release metadata/version preflight, and Python wheel post-build import smoke.

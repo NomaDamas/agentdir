@@ -1,0 +1,26 @@
+{
+  "run_id": "2026-06-09-0408-43ad",
+  "skill": "ralplan",
+  "active": true,
+  "current_phase": "planner",
+  "version": 2,
+  "updated_at": "2026-06-09T04:08:03.457Z",
+  "receipt": {
+    "version": 1,
+    "skill": "ralplan",
+    "owner": "gjc-runtime",
+    "command": "gjc ralplan persist-run-id",
+    "state_path": "/Users/jeffrey/Projects-dev/agentdir/.gjc/state/skill-active-state.json",
+    "storage_path": "/Users/jeffrey/Projects-dev/agentdir/.gjc/state/ralplan-state.json",
+    "mutated_at": "2026-06-09T04:08:03.457Z",
+    "fresh_until": "2026-06-09T04:38:03.457Z",
+    "status": "fresh",
+    "mutation_id": "ralplan:2026-06-09T04:08:03.457Z",
+    "content_sha256": {
+      "algorithm": "sha256",
+      "value": "da51cd62d567e551bc130eed4f524fcae0c09272b6d54070e769cbb40895cb10",
+      "covered_path": "/Users/jeffrey/Projects-dev/agentdir/.gjc/state/ralplan-state.json",
+      "computed_at": "2026-06-09T04:08:03.457Z"
+    }
+  }
+}

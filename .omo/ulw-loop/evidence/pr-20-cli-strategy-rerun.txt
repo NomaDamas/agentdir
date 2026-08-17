@@ -1,0 +1,28 @@
+COMMAND: cargo build -p agentdir-cli
+   Compiling agentdir v0.1.5 (/Users/jeffrey/Projects-dev/agentdir/crates/agentd
+ir)
+   Compiling agentdir-cli v0.1.5 (/Users/jeffrey/Projects-dev/agentdir/crates/ag
+entdir-cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.87s
+build_exit=0
+AGENTDIR_BIN=target/debug/agentdir
+COMMAND: python3 scripts/ci/cli_smoke.py --agentdir target/debug/agentdir --keep
+-temp
+CLI smoke passed
+keeping temp directory: /var/folders/8w/_x12f_056yv_z1x45vr_f2cm0000gp/T/agentdi
+r-cli-smoke-_a4e6_a6
+cli_exit=0
+COMMAND: python3 scripts/ci/strategy_smoke.py --agentdir target/debug/agentdir -
+-keep-temp
+reflink strategy passed
+virtual strategy passed
+symlink source mutation observed; passthrough strategy is unsafe for read-only u
+se
+symlink strategy passed
+Strategy smoke passed
+keeping temp directory: /var/folders/8w/_x12f_056yv_z1x45vr_f2cm0000gp/T/agentdi
+r-strategy-smoke-tw5b510_
+strategy_exit=0
+
+cleanup: killed tmux session ulw-qa-pr20-cli-strategy; removed /var/folders/8w/_x12f_056yv_z1x45vr_f2cm0000gp/T/agentdi and /var/folders/8w/_x12f_056yv_z1x45vr_f2cm0000gp/T/agentdi; no session remains
+C003 manual QA PASS

@@ -1,0 +1,1 @@
+Resolve GitHub #20 for agentdir: complete cross-platform release QA coverage work with TDD RED->GREEN evidence, manual CLI QA artifacts, commit cleanly, open/update PR targeting dev, peer-review, and merge to dev if all verification passes.

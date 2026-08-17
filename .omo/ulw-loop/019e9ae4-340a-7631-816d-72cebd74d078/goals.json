@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "createdAt": "2026-06-06T03:06:34.401Z",
+  "updatedAt": "2026-06-06T03:13:06.719Z",
+  "briefPath": ".omo/ulw-loop/019e9ae4-340a-7631-816d-72cebd74d078/brief.md",
+  "goalsPath": ".omo/ulw-loop/019e9ae4-340a-7631-816d-72cebd74d078/goals.json",
+  "ledgerPath": ".omo/ulw-loop/019e9ae4-340a-7631-816d-72cebd74d078/ledger.jsonl",
+  "codexGoalMode": "aggregate",
+  "goals": [
+    {
+      "id": "G001-resolve-github-20-for-agentdir-compl",
+      "title": "Resolve GitHub #20 for agentdir: complete cross-platform release QA c...",
+      "objective": "Resolve GitHub #20 for agentdir: complete cross-platform release QA coverage work with TDD RED->GREEN evidence, manual CLI QA artifacts, commit cleanly, open/update PR targeting dev, peer-review, and merge to dev if all verification passes.",
+      "status": "complete",
+      "successCriteria": [
+        {
+          "id": "C001",
+          "scenario": "tmux: run git merge-base --is-ancestor origin/codex/cross-platform-release-qa origin/dev, gh pr checks 20 --watch=false, and gh pr view 20 --json baseRefName,headRefName,state,reviewDecision,mergeStateStatus,statusCheckRollup,url; PASS iff ancestry exits 0, checks are all pass, and PR #20 state is documented.",
+          "userModel": "happy",
+          "expectedEvidence": ".omo/ulw-loop/evidence/pr-20-dev-ancestry-and-checks.txt plus existing RED evidence .omo/ulw-loop/evidence/pr-20-readiness-red.txt and GREEN issue_18_release_qa output",
+          "capturedEvidence": ".omo/ulw-loop/evidence/pr-20-dev-ancestry-and-checks.txt: ancestry exit 0; diff vs dev empty; gh pr checks 20 reported 12 successful; PR state documented as open/main/review-required. RED: pr-20-readiness-red.txt; GREEN: issue_18_release_qa.py 10 PASS. cleanup: killed tmux session ulw-qa-pr20-state; no session remains",
+          "status": "pass",
+          "capturedAt": "2026-06-06T03:10:29.274Z"
+        },
+        {
+          "id": "C002",
+          "scenario": "tmux: run python3 scripts/ci/release_preflight.py --expected-version 0.0.0 and python3 scripts/ci/release_preflight.py --expected-version 0.1.5; PASS iff mismatch exits nonzero with version mismatch and correct expected version exits 0.",
+          "userModel": "edge",
+          "expectedEvidence": ".omo/ulw-loop/evidence/pr-20-release-preflight-rerun.txt plus existing RED evidence .omo/ulw-loop/evidence/pr-20-readiness-red.txt and .omo/ulw-loop/evidence/pr-20-python-wheel-entrypoint-red.txt",
+          "capturedEvidence": ".omo/ulw-loop/evidence/pr-20-release-preflight-rerun.txt: --expected-version 0.0.0 exited 1 with version mismatch; --expected-version 0.1.5 exited 0. RED: pr-20-readiness-red.txt and pr-20-python-wheel-entrypoint-red.txt. cleanup: killed tmux session ulw-qa-pr20-preflight; no session remains",
+          "status": "pass",
+          "capturedAt": "2026-06-06T03:10:34.120Z"
+        },
+        {
+          "id": "C003",
+          "scenario": "tmux: build agentdir CLI, run python3 scripts/ci/cli_smoke.py --agentdir target/debug/agentdir --keep-temp and python3 scripts/ci/strategy_smoke.py --agentdir target/debug/agentdir --keep-temp; PASS iff both exit 0, expected pass lines are present, retained temp dirs are removed, and no ulw-qa-pr20 tmux sessions remain.",
+          "userModel": "regression",
+          "expectedEvidence": ".omo/ulw-loop/evidence/pr-20-cli-strategy-rerun.txt plus existing RED evidence .omo/ulw-loop/evidence/pr-20-ci-enforcement-red.txt and existing manual QA evidence pr-20-cli-keep-temp.txt/pr-20-strategy-keep-temp.txt",
+          "capturedEvidence": ".omo/ulw-loop/evidence/pr-20-cli-strategy-rerun.txt: cargo build -p agentdir-cli exit 0; CLI smoke passed; reflink/virtual/symlink strategy passed; Strategy smoke passed. RED: pr-20-ci-enforcement-red.txt. cleanup: killed tmux session ulw-qa-pr20-cli-strategy; removed retained temp dirs; no session remains",
+          "status": "pass",
+          "capturedAt": "2026-06-06T03:10:29.280Z"
+        }
+      ],
+      "attempt": 0,
+      "createdAt": "2026-06-06T03:06:34.401Z",
+      "updatedAt": "2026-06-06T03:13:06.719Z",
+      "completedAt": "2026-06-06T03:13:06.719Z",
+      "evidence": "PR #20 content is already merged to dev at 8498407; retarget to dev rejected because no new commits between dev and head; PR #20 closed as resolved with comment. Criteria evidence: pr-20-dev-ancestry-and-checks.txt, pr-20-release-preflight-rerun.txt, pr-20-cli-strategy-rerun.txt. Peer review: UNCONDITIONAL APPROVAL."
+    }
+  ],
+  "codexObjective": "Complete the durable ulw-loop plan in .omo/ulw-loop/019e9ae4-340a-7631-816d-72cebd74d078/goals.json, including later accepted/appended stories, under the original brief constraints; use .omo/ulw-loop/019e9ae4-340a-7631-816d-72cebd74d078/ledger.jsonl as the audit trail.",
+  "aggregateCompletion": {
+    "status": "complete",
+    "completedAt": "2026-06-06T03:13:06.719Z",
+    "evidence": "PR #20 content is already merged to dev at 8498407; retarget to dev rejected because no new commits between dev and head; PR #20 closed as resolved with comment. Criteria evidence: pr-20-dev-ancestry-and-checks.txt, pr-20-release-preflight-rerun.txt, pr-20-cli-strategy-rerun.txt. Peer review: UNCONDITIONAL APPROVAL.",
+    "codexGoal": {
+      "threadId": "019e9ae4-340a-7631-816d-72cebd74d078",
+      "status": "complete",
+      "objective": "Complete the durable ulw-loop plan in .omo/ulw-loop/019e9ae4-340a-7631-816d-72cebd74d078/goals.json, including later accepted/appended stories, under the original brief constraints; use .omo/ulw-loop/019e9ae4-340a-7631-816d-72cebd74d078/ledger.jsonl as the audit trail."
+    }
+  }
+}

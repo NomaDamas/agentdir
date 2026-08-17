@@ -1,0 +1,29 @@
+{
+  "active": false,
+  "version": 2,
+  "current_phase": "handoff",
+  "skill": "ralplan",
+  "cwd": "/Users/jeffrey/Projects-dev/agentdir",
+  "updated_at": "2026-06-09T04:11:33.303Z",
+  "session_id": "019eaa8a-e073-7000-8842-f3084f3ca364",
+  "receipt": {
+    "version": 1,
+    "skill": "ralplan",
+    "owner": "gjc-state-cli",
+    "command": "gjc state ralplan handoff --to ultragoal",
+    "state_path": "/Users/jeffrey/Projects-dev/agentdir/.gjc/state/sessions/019eaa8a-e073-7000-8842-f3084f3ca364/skill-active-state.json",
+    "storage_path": "/Users/jeffrey/Projects-dev/agentdir/.gjc/state/sessions/019eaa8a-e073-7000-8842-f3084f3ca364/ralplan-state.json",
+    "mutated_at": "2026-06-09T04:11:33.303Z",
+    "fresh_until": "2026-06-09T04:41:33.303Z",
+    "status": "fresh",
+    "mutation_id": "ralplan:handoff:ultragoal:2026-06-09T04:11:33.303Z",
+    "content_sha256": {
+      "algorithm": "sha256",
+      "value": "a934c42ee3d610695045a2f86c6d8b3c23ba1d19eb98e9c4efdbe2b9d505b6cb",
+      "covered_path": "/Users/jeffrey/Projects-dev/agentdir/.gjc/state/sessions/019eaa8a-e073-7000-8842-f3084f3ca364/ralplan-state.json",
+      "computed_at": "2026-06-09T04:11:33.306Z"
+    }
+  },
+  "handoff_to": "ultragoal",
+  "handoff_at": "2026-06-09T04:11:33.303Z"
+}

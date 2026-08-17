@@ -1,0 +1,3 @@
+CLI smoke passed
+keeping temp directory: /var/folders/8w/_x12f_056yv_z1x45vr_f2cm0000gp/T/agentdir-cli-smoke-jkbsh8g9
+EXIT:0

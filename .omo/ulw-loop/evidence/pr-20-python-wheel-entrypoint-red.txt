@@ -1,0 +1,23 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_python_wheel_smoke_script_exercises_binding_surface ___________
+
+    def test_python_wheel_smoke_script_exercises_binding_surface() -> None:
+        script = read("scripts/ci/python_wheel_smoke.py")
+        for snippet in (
+            "agentdir import failed",
+            "Workspace.init",
+            ".map(",
+            ".read_bytes(",
+            ".export_mapping(",
+            ".refresh()",
+            "Python wheel smoke passed",
+        ):
+            assert snippet in script
+>       assert "raise SystemExit(main())" in script
+E       assert 'raise SystemExit(main())' in 'from __future__ import annotations\n\nimport subprocess\nimport sys\n\n\nSMOKE_PROGRAM = "\\n".join(\n    [\n        ...n)\n\n\ndef main() -> int:\n    return subprocess.run([sys.executable, "-c", SMOKE_PROGRAM], check=False).returncode\n'
+
+crates/agentdir/tests/issue_18_release_qa.py:98: AssertionError
+=========================== short test summary info ============================
+FAILED crates/agentdir/tests/issue_18_release_qa.py::test_python_wheel_smoke_script_exercises_binding_surface
+1 failed, 9 deselected in 0.03s

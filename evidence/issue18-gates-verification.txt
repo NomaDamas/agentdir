@@ -1,0 +1,25 @@
+=== Issue #18 residual gates verification (2026-06-09T04:26:04Z) ===
+[rust] cargo publish -p agentdir-cli --dry-run present:
+57:        run: cargo publish -p agentdir-cli --dry-run
+[rust] ordering (sparse-index wait -> dry-run -> publish):
+36:      - name: Wait for crates.io sparse index to reflect agentdir
+56:      - name: Preflight packaging check (agentdir-cli)
+59:      - name: Publish agentdir-cli
+[node] npm pack --dry-run present (before publish):
+125:    name: Publish to npm
+169:        run: npm pack --dry-run
+171:      - name: Publish
+=== stdlib QA runner ===
+PASS test_ci_enforces_release_qa_artifact_checks
+PASS test_ci_runs_rust_workspace_tests_on_linux_macos_windows
+PASS test_cli_smoke_script_exercises_required_commands_and_readonly_check
+PASS test_node_package_lock_root_version_matches_package_json
+PASS test_python_release_workflow_import_smokes_built_wheels_per_os
+PASS test_python_wheel_smoke_script_exercises_binding_surface
+PASS test_release_node_workflow_packs_before_publish
+PASS test_release_preflight_checks_versions_and_packaging_commands
+PASS test_release_preflight_has_expected_version_negative_path
+PASS test_release_rust_workflow_dry_runs_cli_before_publish
+PASS test_smoke_scripts_support_keep_temp_for_manual_qa_artifacts
+PASS test_strategy_smoke_script_covers_reflink_virtual_and_symlink_contracts
+runner exit=0
